@@ -1,0 +1,15 @@
+[user]
+	name = Jason Varga
+	email = jason@pixelfear.com
+[mergetool]
+	keepBackup = true
+[credential]
+	helper = osxkeychain
+[push]
+	default = simple
+[core]
+	excludesfile = /Users/jason/.gitignore_global
+[http]
+	postBuffer = 1048576000
+[grep]
+	patternType = perl
