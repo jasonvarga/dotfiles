@@ -4,4 +4,7 @@
     ~/.gitconfig: git/gitconfig
     ~/.zshrc: zsh/zshrc
     ~/.config/starship.toml: starship.toml
-    ~/.hushlogin: hushlogin
+
+- shell:
+    description: Hushing login
+    command: "[ -f ~/.hushlogin ] || touch ~/.hushlogin"
