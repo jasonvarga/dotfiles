@@ -8,7 +8,7 @@
 [push]
 	default = simple
 [core]
-	excludesfile = /Users/jason/.gitignore_global
+	excludesfile = /Users/jason/.dotfiles/git/gitignore_global
 [http]
 	postBuffer = 1048576000
 [grep]

@@ -1,0 +1,17 @@
+[directory]
+truncation_length = 5
+
+[package]
+disabled = true
+
+[aws]
+disabled = true
+
+[php]
+disabled = true
+
+[nodejs]
+disabled = true
+
+[git_status]
+format = '([\[$conflicted$deleted$renamed$modified$staged$untracked$ahead_behind\]]($style) )'

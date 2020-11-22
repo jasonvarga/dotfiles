@@ -3,5 +3,4 @@
 - link:
     ~/.gitconfig: git/gitconfig
     ~/.zshrc: zsh/zshrc
-
-
+    ~/.config/starship.toml: starship.toml
