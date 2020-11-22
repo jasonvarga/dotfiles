@@ -37,4 +37,6 @@ alias gap="git add -p"
 alias nah='git reset --hard; git clean -df;'
 alias glt='git describe --tags --abbrev=0'
 alias gt='gittower .'
+alias wip="git add . && git commit -m 'wip'"
+alias wipa="git add . && git commit --amend -m 'wip'"
 alias cdr='cd $(git rev-parse --show-toplevel)'
