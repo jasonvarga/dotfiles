@@ -1,7 +1,29 @@
 tap 'homebrew/cask'
 
 brew 'starship'
+brew 'mas'
+brew 'trash'
+brew 'tree'
 brew 'zsh-autosuggestions'
 brew 'zsh-syntax-highlighting'
 
-# mas '1Password', id: 1333542190
+cask '1password'
+cask 'discord'
+cask 'docker'
+cask 'droplr'
+cask 'fantastical'
+cask 'firefox'
+cask 'iterm2'
+cask 'moom'
+cask 'nordvpn'
+cask 'slack'
+cask 'spotify'
+cask 'sublime-text'
+cask 'tableplus'
+cask 'telegram'
+cask 'tinkerwell'
+cask 'tower'
+cask 'transmit'
+cask 'visual-studio-code'
+
+mas 'Bear Notes', id: 1091189122

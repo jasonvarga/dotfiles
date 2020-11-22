@@ -19,6 +19,7 @@ alias ip4='curl v4.icanhazip.com'
 alias ip6='curl v6.icanhazip.com'
 alias ls="ls -aFG"
 alias l="ls"
+alias rm="trash"
 alias weather='curl -s wttr.in | sed -n "1,7p"'
 alias dot='cd ~/.dotfiles'
 alias o='open .'
