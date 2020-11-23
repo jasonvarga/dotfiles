@@ -8,5 +8,5 @@
     ~/.composer/config.json: composer/config.json
 
 - shell:
-    description: Hushing login
+  - description: Hushing login
     command: "[ -f ~/.hushlogin ] || touch ~/.hushlogin"
