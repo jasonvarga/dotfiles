@@ -4,6 +4,8 @@
     ~/.gitconfig: git/gitconfig
     ~/.zshrc: zsh/zshrc
     ~/.config/starship.toml: starship.toml
+    ~/.composer/composer.json: composer/composer.json
+    ~/.composer/config.json: composer/config.json
 
 - shell:
     description: Hushing login

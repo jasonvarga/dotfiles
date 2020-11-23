@@ -1,0 +1,9 @@
+{
+    "repositories": [
+        {
+            "type": "path",
+            "url": "/users/jason/code/statamic/three/cms",
+            "canonical": false
+        }
+    ]
+}
