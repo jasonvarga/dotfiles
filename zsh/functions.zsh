@@ -1,19 +1,29 @@
+# Creates a local branch from a Pull Request
+# e.g. `gpr 123` would grab PR#123, put it in pull/123, and check it out.
 function gpr {
     if [ -z "$1" ]; then
-        echo "Usage: gpr <pr number> [<local branch name>]"
+        echo "Usage: gpr <pr number>"
         return
     fi
 
-    if [ $2 ]; then
-        branch=$2
-    else
-        branch=pull/$1
-    fi
+    branch=pull/$1
 
     git fetch origin pull/$1/head:$branch
     git checkout $branch
 }
 
+# Switches to the master branch and deletes the pull request branch it was just on.
+function gpr-del {
+    branch=$(git branch --show-current)
+
+    git checkout master
+
+    if [[ $branch == pull/* ]]; then
+        git branch -D $branch
+    else
+        echo "Not a pull/* branch, not deleting."
+    fi
+}
 
 function tinker {
 	if [ -e artisan ]; then
