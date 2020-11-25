@@ -57,3 +57,10 @@ opendb () {
    echo "Opening ${DB_URL}"
    open $DB_URL
 }
+
+
+sz() {
+  echo 'Sourcing ~/.zshrc...'
+  source ~/.zshrc
+  echo 'Done.'
+}
