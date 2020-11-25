@@ -13,5 +13,8 @@ disabled = true
 [nodejs]
 disabled = true
 
+[python]
+disabled = true
+
 [git_status]
 format = '([\[$conflicted$deleted$renamed$modified$staged$untracked$ahead_behind\]]($style) )'
