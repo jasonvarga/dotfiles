@@ -31,7 +31,7 @@ source $ZSH_CUSTOM/plugins/tipz/tipz.zsh
 # Oh My Zsh
 # ------------------------------------------------------------------------------
 
-plugins=(laravel please zsh-autosuggestions zsh-syntax-highlighting)
+plugins=(laravel please)
 source $ZSH/oh-my-zsh.sh
 
 
