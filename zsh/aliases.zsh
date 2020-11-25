@@ -34,7 +34,11 @@ alias gss='gs -s'
 alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
 alias gc="git commit -m"
 alias gco="git checkout"
+alias gcom="gco master"
 alias gap="git add -p"
+alias gpl='git pull'
+alias gplr='git pull --rebase'
+alias gpsh='git push'
 alias nah='git reset --hard; git clean -df;'
 alias glt='git describe --tags --abbrev=0'
 alias gt='gittower .'
