@@ -13,3 +13,5 @@
 	postBuffer = 1048576000
 [grep]
 	patternType = perl
+[pull]
+	ff = only
