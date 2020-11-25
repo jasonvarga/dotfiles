@@ -1,11 +1,11 @@
 {
     "require": {
-        "laravel/valet": "^2.7",
-        "squizlabs/php_codesniffer": "*",
-        "laravel/installer": "dev-master",
-        "psy/psysh": "@stable",
-        "friendsofphp/php-cs-fixer": "^2.16",
         "beyondcode/expose": "^1.0",
+        "friendsofphp/php-cs-fixer": "^2.16",
+        "laravel/installer": "dev-master",
+        "laravel/valet": "^2.7",
+        "psy/psysh": "@stable",
+        "squizlabs/php_codesniffer": "*",
         "statamic/cli": "^2.0"
     }
 }
