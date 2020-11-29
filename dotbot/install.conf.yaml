@@ -6,6 +6,7 @@
     ~/.config/starship.toml: starship.toml
     ~/.composer/composer.json: composer/composer.json
     ~/.composer/config.json: composer/config.json
+    ~/.mackup.cfg: mackup.cfg
 
 - shell:
   - description: Hushing login

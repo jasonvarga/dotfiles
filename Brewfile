@@ -1,5 +1,6 @@
 brew 'composer'
 brew 'dnsmasq'
+brew 'mackup'
 brew 'mas'
 brew 'nginx'
 brew 'node'
