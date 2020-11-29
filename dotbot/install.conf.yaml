@@ -1,3 +1,14 @@
+- defaults:
+    link:
+      create: true
+      force: true
+    shell:
+      quiet: true
+
+- shell:
+  - description: Validating sudo credentials
+    command: "sudo --validate"
+
 - clean: ['~']
 
 - link:
@@ -11,3 +22,23 @@
 - shell:
   - description: Hushing login
     command: "[ -f ~/.hushlogin ] || touch ~/.hushlogin"
+  - description: Telling gatekeeper to allow unidentified developers
+    command: "sudo spctl --master-disable"
+  - description: Installing Homebrew
+    command: "[ -x \"$(which brew)\" ] || /usr/bin/ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\""
+  - description: Updating Homebrew
+    command: "brew update"
+  - description: Installing Brewfile bundle
+    command: "brew bundle"
+  - description: Cleaning up Homebrew
+    command: "brew cleanup"
+  - description: Installing global Composer dependencies
+    command: "composer global install"
+  - description: Trust Valet
+    command: "valet trust"
+  - description: Initializing Valet
+    command: "valet install"
+  - description: Parking Valet
+    command: "valet park ~/Sites && valet park ~/Sites/Support"
+  - description: Clearing sudo credential cache
+    command: "sudo --reset-timestamp"
