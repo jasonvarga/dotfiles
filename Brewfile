@@ -1,15 +1,16 @@
 brew 'composer'
+brew 'dnsmasq'
 brew 'mas'
+brew 'nginx'
 brew 'node'
 brew 'php'
-brew 'php', restart_service: true
+brew 'php@7.3'
+brew 'php@7.4'
 brew 'starship'
 brew 'trash'
 brew 'tree'
 brew 'zsh-autosuggestions'
 brew 'zsh-syntax-highlighting'
-brew "dnsmasq", restart_service: true
-brew "nginx", restart_service: true
 
 cask '1password'
 cask 'discord'
