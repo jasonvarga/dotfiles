@@ -59,6 +59,11 @@ opendb () {
 }
 
 
+comp-ver() {
+    composer show $1 | grep 'versions' | grep -o -E '\*\ .+' | cut -d' ' -f2 | cut -d',' -f1;
+}
+
+
 sz() {
   echo 'Sourcing ~/.zshrc...'
   source ~/.zshrc
