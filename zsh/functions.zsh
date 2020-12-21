@@ -15,8 +15,8 @@ function gpr {
 # Switches to the master branch and deletes the pull request branch it was just on.
 function gpr-del {
     branch=$(git branch --show-current)
-
-    git checkout master
+    default_branch=$(gdb)
+    git checkout $default_branch
 
     if [[ $branch == pull/* ]]; then
         git branch -D $branch
