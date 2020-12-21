@@ -7,9 +7,11 @@ function gpr {
     fi
 
     branch=pull/$1
-
-    git fetch origin pull/$1/head:$branch
-    git checkout $branch
+    gh pr checkout $1
+    current=$(git branch --show-current)
+    git branch -m $current $branch
+    rename_status=$?
+    [ $rename_status -eq 0 ] && echo "Renamed branch '$current' to '$branch'"
 }
 
 # Switches to the master branch and deletes the pull request branch it was just on.
