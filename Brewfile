@@ -1,3 +1,5 @@
+tap 'homebrew/cask-drivers'
+
 brew 'composer'
 brew 'dnsmasq'
 brew 'gh'
@@ -22,6 +24,7 @@ cask 'fantastical'
 cask 'firefox'
 cask 'iterm2'
 cask 'kaleidoscope'
+cask 'logitech-options'
 cask 'moom'
 cask 'nordvpn'
 cask 'paw'
