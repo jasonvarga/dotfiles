@@ -88,7 +88,7 @@ defaults write com.apple.screencapture disable-shadow -bool true
 ###############################################################################
 
 # Finder: show all filename extensions
-defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+defaults write NSGlobalDomain AppleShowAllExtensions -bool false
 
 # Finder: show status bar
 defaults write com.apple.finder ShowStatusBar -bool true
@@ -137,6 +137,9 @@ defaults write com.apple.dock minimize-to-application -bool true
 # Only useful on a fresh install.
 defaults write com.apple.dock persistent-apps -array
 
+# Show indicator lights for open applications in the Dock
+defaults write com.apple.dock show-process-indicators -bool false
+
 # Don’t automatically rearrange Spaces based on most recent use
 defaults write com.apple.dock mru-spaces -bool false
 
@@ -169,8 +172,8 @@ defaults write com.apple.dock wvous-tr-modifier -int 0
 defaults write com.apple.dock wvous-bl-corner -int 2
 defaults write com.apple.dock wvous-bl-modifier -int 0
 # Bottom right screen corner
-defaults write com.apple.dock wvous-bl-corner -int 3
-defaults write com.apple.dock wvous-bl-modifier -int 0
+defaults write com.apple.dock wvous-br-corner -int 3
+defaults write com.apple.dock wvous-br-modifier -int 0
 
 ###############################################################################
 # Spotlight                                                                   #
