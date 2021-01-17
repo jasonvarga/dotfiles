@@ -42,3 +42,5 @@
     command: "valet park ~/Sites && valet park ~/Sites/Support"
   - description: Clearing sudo credential cache
     command: "sudo --reset-timestamp"
+  - description: Apply MacOS preferences
+    command: "./macos"
