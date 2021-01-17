@@ -1,4 +1,5 @@
 tap 'homebrew/cask-drivers'
+tap 'epk/epk'
 
 brew 'composer'
 brew 'dnsmasq'
@@ -22,6 +23,7 @@ cask 'docker'
 cask 'droplr'
 cask 'fantastical'
 cask 'firefox'
+cask 'font-sf-mono-nerd-font'
 cask 'iterm2'
 cask 'kaleidoscope'
 cask 'logitech-options'
