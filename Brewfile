@@ -27,7 +27,6 @@ cask 'font-sf-mono-nerd-font'
 cask 'iterm2'
 cask 'kaleidoscope'
 cask 'logitech-options'
-cask 'moom'
 cask 'nordvpn'
 cask 'paw'
 cask 'slack'
@@ -42,3 +41,4 @@ cask 'transmit'
 cask 'visual-studio-code'
 
 mas 'Bear Notes', id: 1091189122
+mas 'Moom', id: 419330170
