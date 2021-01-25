@@ -28,6 +28,8 @@ alias s2='cd ~/code/statamic/two'
 alias s3='cd ~/code/statamic/three'
 alias mix='npm run dev'
 alias mw='npm run watch'
+alias imix='npm install && mix'
+alias imw='npm install && mw'
 alias gs='git status'
 alias gss='gs -s'
 alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
@@ -46,3 +48,4 @@ alias gpr='gh pr checkout'
 alias wip="git add . && git commit -m 'wip'"
 alias wipa="git add . && git commit --amend -m 'wip'"
 alias cdr='cd $(git rev-parse --show-toplevel)'
+alias ray='comp require spatie/laravel-ray'
