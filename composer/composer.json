@@ -6,6 +6,7 @@
         "laravel/valet": "^2.7",
         "psy/psysh": "@stable",
         "squizlabs/php_codesniffer": "*",
-        "statamic/cli": "^2.0"
+        "statamic/cli": "^2.0",
+        "tightenco/takeout": "^1.8"
     }
 }
