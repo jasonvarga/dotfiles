@@ -14,17 +14,13 @@ function gpr {
     [ $rename_status -eq 0 ] && echo "Renamed branch '$current' to '$branch'"
 }
 
-# Switches to the master branch and deletes the pull request branch it was just on.
-function gpr-del {
+# Switches to the default branch and deletes the branch it was just on.
+# gdbard = "Git Delete Branch And Return to Default"
+function gdbard {
     branch=$(git branch --show-current)
     default_branch=$(gdb)
     git checkout $default_branch
-
-    if [[ $branch == pull/* ]]; then
-        git branch -D $branch
-    else
-        echo "Not a pull/* branch, not deleting."
-    fi
+    git branch -D $branch
 }
 
 function tinker {
