@@ -1,19 +1,3 @@
-# Creates a local branch from a Pull Request
-# e.g. `gpr 123` would grab PR#123, put it in pull/123, and check it out.
-function gpr {
-    if [ -z "$1" ]; then
-        echo "Usage: gpr <pr number>"
-        return
-    fi
-
-    branch=pull/$1
-    gh pr checkout $1
-    current=$(git branch --show-current)
-    git branch -m $current $branch
-    rename_status=$?
-    [ $rename_status -eq 0 ] && echo "Renamed branch '$current' to '$branch'"
-}
-
 # Switches to the default branch and deletes the branch it was just on.
 # gdbard = "Git Delete Branch And Return to Default"
 function gdbard {
