@@ -49,3 +49,5 @@ alias wip="git add . && git commit -m 'wip'"
 alias wipa="git add . && git commit --amend -m 'wip'"
 alias cdr='cd $(git rev-parse --show-toplevel)'
 alias ray='comp require spatie/laravel-ray'
+alias tink='tinker'
+alias sizes='du -sh -c *'
