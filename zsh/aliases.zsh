@@ -49,5 +49,6 @@ alias wip="git add . && git commit -m 'wip'"
 alias wipa="git add . && git commit --amend -m 'wip'"
 alias cdr='cd $(git rev-parse --show-toplevel)'
 alias ray='comp require spatie/laravel-ray'
+alias cr='curl -X POST http://localhost:23517 -H "Accept: application/json" -H "Content-Type: application/json" -d "{\"payloads\":[{\"type\":\"clear_all\",\"content\":[],\"origin\":{\"file\":\"bash\",\"line_number\":1,\"hostname\":\"localhost\"}}],\"meta\":[]}"'
 alias tink='tinker'
 alias sizes='du -sh -c *'
