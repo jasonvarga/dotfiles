@@ -15,6 +15,7 @@
     ~/.gitconfig: git/gitconfig
     ~/.zshrc: zsh/zshrc
     ~/.config/starship.toml: starship.toml
+    ~/.config/karabiner: karabiner
     ~/.composer/composer.json: composer/composer.json
     ~/.composer/config.json: composer/config.json
     ~/.mackup.cfg: mackup.cfg
