@@ -26,7 +26,7 @@
   - description: Telling gatekeeper to allow unidentified developers
     command: "sudo spctl --master-disable"
   - description: Installing Homebrew
-   command: "[ -x \"$(which brew)\" ] || /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+    command: "[ -x \"$(which brew)\" ] || /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
   - description: Updating Homebrew
     command: "brew update"
   - description: Installing Brewfile bundle
