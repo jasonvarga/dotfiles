@@ -57,3 +57,4 @@ alias tink='tinker'
 alias sizes='du -sh -c *'
 alias vo='valet open'
 alias iterm='open . -a iterm'
+eval $(thefuck --alias)
