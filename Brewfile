@@ -1,10 +1,12 @@
 tap 'homebrew/cask-drivers'
 tap 'epk/epk'
 tap 'nicoverbruggen/homebrew-cask'
+tap 'yqrashawn/goku'                   # goku
 
 brew 'composer'
 brew 'dnsmasq'
 brew 'gh'
+brew 'goku'
 brew 'mackup'
 brew 'mas'
 brew 'nginx'

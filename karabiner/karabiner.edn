@@ -1,0 +1,13 @@
+; Compiles to `~/.config/karabiner/karabiner.json with `goku` (or watch with `gokuw`)
+{
+  :main [
+    {:des "Caps lock to hyper (esc if alone)" :rules [
+      [:##caps_lock :!COleft_control nil {:alone :escape}]
+    ]}
+
+    {:des "Both shift keys toggles caps lock" :rules [
+      [:!S#Pright_shift :caps_lock]
+      [:!R#Pleft_shift :caps_lock]
+    ]}
+  ]
+}

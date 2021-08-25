@@ -13,6 +13,8 @@ export PATH=${PATH}:/usr/local/bin
 export PATH=${PATH}:/usr/local/sbin
 export PATH=${PATH}:~/.composer/vendor/bin
 
+export GOKU_EDN_CONFIG_FILE=$DOTFILES/karabiner/karabiner.edn
+
 
 # ------------------------------------------------------------------------------
 # General Settings
