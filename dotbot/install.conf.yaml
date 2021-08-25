@@ -15,10 +15,12 @@
     ~/.gitconfig: git/gitconfig
     ~/.zshrc: zsh/zshrc
     ~/.config/starship.toml: starship.toml
+    ~/.config/yabai/yabairc: yabai/yabairc
     ~/.composer/composer.json: composer/composer.json
     ~/.composer/config.json: composer/config.json
     ~/.mackup.cfg: mackup.cfg
     ~/.ssh/config: ssh/config
+    ~/.hammerspoon: hammerspoon
 
 - shell:
   - description: Hushing login

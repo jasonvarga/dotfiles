@@ -1,6 +1,7 @@
 tap 'homebrew/cask-drivers'
 tap 'epk/epk'
 tap 'nicoverbruggen/homebrew-cask'
+tap 'koekeishiya/formulae'             # yabai
 tap 'yqrashawn/goku'                   # goku
 
 brew 'composer'
@@ -18,6 +19,7 @@ brew 'starship'
 brew 'thefuck'
 brew 'trash'
 brew 'tree'
+brew 'yabai'
 brew 'zsh-autosuggestions'
 brew 'zsh-syntax-highlighting'
 
@@ -28,6 +30,7 @@ cask 'droplr'
 cask 'fantastical'
 cask 'firefox'
 cask 'font-sf-mono-nerd-font'
+cask 'hammerspoon'
 cask 'helo'
 cask 'iterm2'
 cask 'kaleidoscope'
