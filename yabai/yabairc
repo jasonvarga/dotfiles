@@ -18,7 +18,7 @@ yabai -m rule --add app="^Discord$" manage=off
 yabai -m rule --add app="^Things$" manage=off
 yabai -m rule --add app="^Ray$" manage=off
 yabai -m rule --add app="^System Information$" manage=off
-yabai -m rule --add app="^System Preferences$" manage=offd
+yabai -m rule --add app="^System Preferences$" manage=off
 yabai -m rule --add app="^1Password" manage=off
 yabai -m rule --add app="^Docker Desktop$" manage=off
 yabai -m rule --add app="^Mimestream$" manage=off
