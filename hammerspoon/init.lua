@@ -57,10 +57,6 @@ local yabaiKeyBindings = {
   ['down'] = 'window --focus south',
   ['up'] = 'window --focus north',
   ['right'] = 'window --focus east',
-  ['h'] = 'window --focus west',
-  ['j'] = 'window --focus south',
-  ['k'] = 'window --focus north',
-  ['l'] = 'window --focus east',
   ['n'] = 'window --focus stack.next OR window --focus stack.first',
   ['p'] = 'window --focus stack.prev OR window --focus stack.last',
   ['o'] = 'window --toggle zoom-parent',
@@ -121,6 +117,10 @@ end
 function yabaiModal:exited()
   hs.window.highlight.stop()
 end
+
+hs.hotkey.bind(hyper, 'h', function()
+  hs.task.new('/opt/homebrew/bin/php', nil, {'/Users/jason/.dotfiles/yabai/hide-floating-windows.php'}):start()
+end)
 
 
 --------------------------------------------------------------------------------
