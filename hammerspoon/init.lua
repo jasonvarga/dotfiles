@@ -24,6 +24,9 @@ hs.hotkey.bind(hyper, 'f1', function()
   hs.execute('osascript -e \'tell app "System Events" to tell appearance preferences to set dark mode to not dark mode\'')
 end)
 
+hs.hotkey.bind(hyper, 'h', function()
+  hs.execute('/opt/homebrew/bin/php /Users/jason/.dotfiles/yabai/hide-floating-windows.php')
+end)
 
 --------------------------------------------------------------------------------
 -- Summon Specific Apps
@@ -117,10 +120,6 @@ end
 function yabaiModal:exited()
   hs.window.highlight.stop()
 end
-
-hs.hotkey.bind(hyper, 'h', function()
-  hs.task.new('/opt/homebrew/bin/php', nil, {'/Users/jason/.dotfiles/yabai/hide-floating-windows.php'}):start()
-end)
 
 
 --------------------------------------------------------------------------------
