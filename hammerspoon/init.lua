@@ -25,8 +25,9 @@ hs.hotkey.bind(hyper, 'f1', function()
 end)
 
 hs.hotkey.bind(hyper, 'h', function()
-  hs.execute('/opt/homebrew/bin/php /Users/jason/.dotfiles/yabai/hide-floating-windows.php')
+  hs.task.new('/opt/homebrew/bin/php', nil, {'/Users/jason/.dotfiles/yabai/hide-floating-windows.php'}):start()
 end)
+
 
 --------------------------------------------------------------------------------
 -- Summon Specific Apps
