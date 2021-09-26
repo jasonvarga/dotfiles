@@ -38,6 +38,7 @@ export EDITOR="vim"
 
 source ~/.dotfiles/zsh/repos/znap/znap.zsh
 
+
 # ------------------------------------------------------------------------------
 # Starship Prompt
 # https://starship.rs
