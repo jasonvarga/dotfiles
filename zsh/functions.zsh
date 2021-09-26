@@ -52,6 +52,9 @@ compv() {
 
 sz() {
   echo 'Sourcing ~/.zshrc...'
-  source ~/.zshrc
+  # source ~/.zshrc
+  # znap recommends not sourcing directly, instead to use their command.
+  # https://github.com/marlonrichert/zsh-snap/blob/7a18a8468c5b2722bfa71ae5ce413696e8935df3/.zshrc#L2-L3
+  znap restart
   echo 'Done.'
 }
