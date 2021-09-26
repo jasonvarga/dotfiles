@@ -51,6 +51,9 @@ znap prompt
 # Plugins
 # ------------------------------------------------------------------------------
 
+# Autocomplete https://github.com/marlonrichert/zsh-autocomplete
+znap source marlonrichert/zsh-autocomplete
+
 # Autosuggestions https://github.com/zsh-users/zsh-autosuggestions
 znap source zsh-users/zsh-autosuggestions
 
