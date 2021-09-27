@@ -53,6 +53,9 @@ znap prompt
 # ------------------------------------------------------------------------------
 
 # Autocomplete https://github.com/marlonrichert/zsh-autocomplete
+zstyle ':autocomplete:*' widget-style menu-select
+zstyle ':autocomplete:*' fzf-completion yes
+zstyle ':autocomplete:*' list-lines 5
 znap source marlonrichert/zsh-autocomplete
 
 # Autosuggestions https://github.com/zsh-users/zsh-autosuggestions
