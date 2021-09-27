@@ -80,3 +80,4 @@ znap source please
 source $DOTFILES/zsh/functions.zsh
 source $DOTFILES/zsh/aliases.zsh
 source $DOTFILES/zsh/private.zsh
+source $DOTFILES/zsh/fzf.zsh

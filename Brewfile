@@ -6,6 +6,7 @@ tap 'yqrashawn/goku'                   # goku
 
 brew 'composer'
 brew 'dnsmasq'
+brew 'fzf'
 brew 'gh'
 brew 'goku'
 brew 'mackup'
