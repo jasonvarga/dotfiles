@@ -33,7 +33,7 @@ alias nginxlog='tail -f ~/.config/valet/Log/nginx-error.log'
 
 # Read DB creds from .env file and open in TablePlus
 opendb () {
-   [ ! -f .env ] && { echo "No .env file found."; exit 1; }
+   [ ! -f .env ] && { echo "No .env file found."; return 1; }
 
    DB_CONNECTION=$(grep DB_CONNECTION .env | grep -v -e '^\s*#' | cut -d '=' -f 2-)
    DB_HOST=$(grep DB_HOST .env | grep -v -e '^\s*#' | cut -d '=' -f 2-)
