@@ -2,21 +2,36 @@ alias phpunit='vendor/bin/phpunit'
 alias p='phpunit'
 alias pf='p --filter'
 alias pc='p --cache-result --order-by=depends,defects --stop-on-defect'
+
 alias comp='composer'
-alias vapor='vendor/bin/vapor'
-alias sites='cd ~/Sites'
+alias comp1="composer self-update --1 && composer --version"
+alias comp2="composer self-update --2 && composer --version"
+
+compv() {
+  if [[ $1 == *"/"* ]]; then
+    composer show $1 | grep 'versions' | grep -o -E '\*\ .+' | cut -d' ' -f2 | cut -d',' -f1;
+  else
+    composer info | grep $1
+  fi
+}
+
 alias mix='npm run dev'
 alias mw='npm run watch'
 alias imix='npm install && mix'
 alias cmix='npm ci && mix'
 alias imw='npm install && mw'
 alias cmw='npm ci && mw'
+
+alias b='valet open' # browse
+alias vapor='vendor/bin/vapor'
+
 alias rray='comp require spatie/laravel-ray'
-alias cr='ray -C'
-alias vo='valet open'
+alias cr='ray -C' # clear ray
+
 alias docker='open --background -a Docker'
 alias nginxlog='tail -f ~/.config/valet/Log/nginx-error.log'
 
+# Read DB creds from .env file and open in TablePlus
 opendb () {
    [ ! -f .env ] && { echo "No .env file found."; exit 1; }
 
@@ -33,10 +48,3 @@ opendb () {
    open $DB_URL
 }
 
-compv() {
-  if [[ $1 == *"/"* ]]; then
-    composer show $1 | grep 'versions' | grep -o -E '\*\ .+' | cut -d' ' -f2 | cut -d',' -f1;
-  else
-    composer info | grep $1
-  fi
-}
