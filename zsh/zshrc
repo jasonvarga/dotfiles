@@ -36,17 +36,6 @@ eval "$(starship init zsh)"
 
 
 # ------------------------------------------------------------------------------
-# Plugins
-# ------------------------------------------------------------------------------
-
-zstyle ':autocomplete:*' widget-style menu-select
-zstyle ':autocomplete:*' fzf-completion yes
-zstyle ':autocomplete:*' list-lines 5
-zstyle ':autocomplete:*' min-delay 0.2
-TIPZ_TEXT='💡 Aliased to:'
-
-
-# ------------------------------------------------------------------------------
 # Sourcing
 # ------------------------------------------------------------------------------
 

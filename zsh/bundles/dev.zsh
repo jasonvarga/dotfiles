@@ -1,28 +1,22 @@
-# Switches to the default branch and deletes the branch it was just on.
-# gdbard = "Git Delete Branch And Return to Default"
-function gdbard {
-    branch=$(git branch --show-current)
-    default_branch=$(gdb)
-    git checkout $default_branch
-    git branch -D $branch
-}
-
-function tinker {
-	if [ -e artisan ]; then
-		php artisan tinker
-	elif [ -e please ]; then
-		php please tinker
-	else
-		psysh
-	fi
-}
-
-
-function linkcp {
-    rm -f public/vendor/statamic/cp
-    ln -s /Users/jason/Code/statamic/three/cms/resources/dist public/vendor/statamic/cp
-}
-
+alias phpunit='vendor/bin/phpunit'
+alias p='phpunit'
+alias pf='p --filter'
+alias pc='p --cache-result --order-by=depends,defects --stop-on-defect'
+alias comp='composer'
+alias newsite='comp install && cp .env.example .env && art key:generate && vo'
+alias vapor='vendor/bin/vapor'
+alias sites='cd ~/Sites'
+alias mix='npm run dev'
+alias mw='npm run watch'
+alias imix='npm install && mix'
+alias cmix='npm ci && mix'
+alias imw='npm install && mw'
+alias cmw='npm ci && mw'
+alias rray='comp require spatie/laravel-ray'
+alias cr='ray -C'
+alias vo='valet open'
+alias docker='open --background -a Docker'
+alias nginxlog='tail -f ~/.config/valet/Log/nginx-error.log'
 
 opendb () {
    [ ! -f .env ] && { echo "No .env file found."; exit 1; }
@@ -40,7 +34,6 @@ opendb () {
    open $DB_URL
 }
 
-
 compv() {
   if [[ $1 == *"/"* ]]; then
     composer show $1 | grep 'versions' | grep -o -E '\*\ .+' | cut -d' ' -f2 | cut -d',' -f1;
@@ -48,18 +41,3 @@ compv() {
     composer info | grep $1
   fi
 }
-
-# Git checkout with fzf
-gco() {
-  if [ -n "$1" ]; then git checkout $1; return; fi
-  local branches branch
-  branches=$(git branch -vv)
-  branch=$(echo "$branches" | fzf +m)
-  git checkout $(echo "$branch" | awk '{print $1}' | sed "s/.* //")
-}
-
-# Commit with message
-gc() {
-  git commit -m "$*"
-}
-
