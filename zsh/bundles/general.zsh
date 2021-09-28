@@ -14,3 +14,19 @@ eval $(thefuck --alias)
 
 # Copy pwd to clipboard without trailing newline
 alias cwd="pwd && pwd | tr -d '\n' | pbcopy && echo 'Copied to clipboard 📁'"
+
+# Open vscode with z argument
+zode() {
+  if [ -n "$1" ]; then
+    z $1
+  fi
+  code .
+}
+
+# Open sublime with z argument
+zubl() {
+  if [ -n "$1" ]; then
+    z $1
+  fi
+  subl .
+}
