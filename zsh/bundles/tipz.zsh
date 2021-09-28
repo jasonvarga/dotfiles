@@ -1,1 +1,1 @@
-TIPZ_TEXT='💡 Aliased to:'
+TIPZ_TEXT='⚡️Aliased to:'

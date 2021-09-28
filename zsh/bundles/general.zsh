@@ -11,3 +11,6 @@ alias iterm='open . -a iterm'
 alias bs='brew services'
 alias sbs='sudo brew services'
 eval $(thefuck --alias)
+
+# Copy pwd to clipboard without trailing newline
+alias cwd="pwd && pwd | tr -d '\n' | pbcopy && echo 'Copied to clipboard 📁'"
