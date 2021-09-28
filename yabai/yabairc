@@ -8,20 +8,7 @@ yabai -m config left_padding   30
 yabai -m config right_padding  30
 yabai -m config window_gap     30
 
-yabai -m rule --add app="^Finder$" manage=off
-yabai -m rule --add app="^Messages$" manage=off
-yabai -m rule --add app="^Spotify$" manage=off
-yabai -m rule --add app="^Tower$" manage=off
-yabai -m rule --add app="^Tinkerwell$" manage=off
-yabai -m rule --add app="^Slack$" manage=off
-yabai -m rule --add app="^Discord$" manage=off
-yabai -m rule --add app="^Things$" manage=off
-yabai -m rule --add app="^Ray$" manage=off
-yabai -m rule --add app="^System Information$" manage=off
-yabai -m rule --add app="^System Preferences$" manage=off
-yabai -m rule --add app="^1Password" manage=off
-yabai -m rule --add app="^Docker Desktop$" manage=off
-yabai -m rule --add app="^Mimestream$" manage=off
+yabai -m rule --add app!="Code|Safari|Firefox|iTerm|TablePlus" manage=off
 
 yabai -m signal --add event=application_launched app="^Tower$" action="yabai -m window $YABAI_WINDOW_ID --grid 12:6:1:1:4:10"
 yabai -m signal --add event=application_launched app="^Tinkerwell" action="yabai -m window $YABAI_WINDOW_ID --grid 12:6:1:1:4:10"
