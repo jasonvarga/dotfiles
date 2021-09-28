@@ -58,3 +58,18 @@ sz() {
   znap restart
   echo 'Done.'
 }
+
+# Git checkout with fzf
+gco() {
+  if [ -n "$1" ]; then git checkout $1; return; fi
+  local branches branch
+  branches=$(git branch -vv)
+  branch=$(echo "$branches" | fzf +m)
+  git checkout $(echo "$branch" | awk '{print $1}' | sed "s/.* //")
+}
+
+# Commit with message
+gc() {
+  git commit -m "$*"
+}
+

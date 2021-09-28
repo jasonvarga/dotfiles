@@ -40,8 +40,6 @@ alias cmw='npm ci && mw'
 alias gs='git status'
 alias gss='gs -s'
 alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
-alias gc="git commit -m"
-alias gco="git checkout"
 alias gcod='gco $(gdb)'
 alias gap="git add -p"
 alias gpl='git pull'
