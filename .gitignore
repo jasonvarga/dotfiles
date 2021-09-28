@@ -1,2 +1,3 @@
 Brewfile.lock.json
-zsh/private.zsh
+zsh/bundles/private.zsh
+zsh/bundles.sh

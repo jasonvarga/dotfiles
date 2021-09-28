@@ -28,57 +28,32 @@ export EDITOR="vim"
 
 
 # ------------------------------------------------------------------------------
-# Znap
-# https://github.com/marlonrichert/zsh-snap
-# ------------------------------------------------------------------------------
-
-# Download Znap, if it's not there yet.
-[[ -f ~/.dotfiles/zsh/repos/znap/znap.zsh ]] ||
-    git clone https://github.com/marlonrichert/zsh-snap.git ~/.dotfiles/zsh/repos/znap
-
-source ~/.dotfiles/zsh/repos/znap/znap.zsh
-
-
-# ------------------------------------------------------------------------------
 # Starship Prompt
 # https://starship.rs
 # ------------------------------------------------------------------------------
 
-znap eval starship 'starship init zsh'
-znap prompt
+eval "$(starship init zsh)"
 
 
 # ------------------------------------------------------------------------------
 # Plugins
 # ------------------------------------------------------------------------------
 
-# Autocomplete https://github.com/marlonrichert/zsh-autocomplete
 zstyle ':autocomplete:*' widget-style menu-select
 zstyle ':autocomplete:*' fzf-completion yes
 zstyle ':autocomplete:*' list-lines 5
 zstyle ':autocomplete:*' min-delay 0.2
-znap source marlonrichert/zsh-autocomplete
-
-# Autosuggestions https://github.com/zsh-users/zsh-autosuggestions
-znap source zsh-users/zsh-autosuggestions
-
-# Syntax Highlighting https://github.com/zsh-users/zsh-syntax-highlighting
-znap source zsh-users/zsh-syntax-highlighting
-
-# Tipz https://github.com/molovo/tipz
 TIPZ_TEXT='💡 Aliased to:'
-znap source molovo/tipz
-
-# Artisan/Please Autocomplete
-znap source laravel
-znap source please
 
 
 # ------------------------------------------------------------------------------
-# Source External ZSH Files
+# Sourcing
 # ------------------------------------------------------------------------------
 
-source $DOTFILES/zsh/functions.zsh
-source $DOTFILES/zsh/aliases.zsh
-source $DOTFILES/zsh/private.zsh
-source $DOTFILES/zsh/fzf.zsh
+source $DOTFILES/zsh/bundles.sh
+
+sz() {
+  sh $DOTFILES/zsh/compile_bundles.sh
+  source $DOTFILES/zsh/zshrc
+  echo 'Sourced zshrc'
+}

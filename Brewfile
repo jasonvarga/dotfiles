@@ -4,6 +4,7 @@ tap 'nicoverbruggen/homebrew-cask'
 tap 'koekeishiya/formulae'             # yabai
 tap 'yqrashawn/goku'                   # goku
 
+brew 'antibody'
 brew 'composer'
 brew 'dnsmasq'
 brew 'fzf'

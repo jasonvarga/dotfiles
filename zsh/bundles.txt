@@ -1,0 +1,7 @@
+marlonrichert/zsh-autocomplete
+zsh-users/zsh-autosuggestions
+zsh-users/zsh-syntax-highlighting
+jessarcher/zsh-artisan
+pixelfear/zsh-please
+molovo/tipz
+~/.dotfiles/zsh/bundles
