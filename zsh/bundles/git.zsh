@@ -1,6 +1,7 @@
 alias gs='git status'
 alias gss='gs -s'
 alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+alias gc='git commit -m'
 alias gcod='gco $(gdb)'
 alias gap="git add -p"
 alias gpl='git pull'
@@ -24,11 +25,6 @@ gco() {
   branches=$(git branch -vv)
   branch=$(echo "$branches" | fzf +m)
   git checkout $(echo "$branch" | awk '{print $1}' | sed "s/.* //")
-}
-
-# Commit with message
-gc() {
-  git commit -m "$*"
 }
 
 # Switches to the default branch and deletes the branch it was just on.

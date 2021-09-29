@@ -29,6 +29,7 @@ alias rray='comp require spatie/laravel-ray'
 alias cr='ray -C' # clear ray
 
 alias docker='open --background -a Docker'
+alias ts='takeout start'
 alias nginxlog='tail -f ~/.config/valet/Log/nginx-error.log'
 
 # Read DB creds from .env file and open in TablePlus
