@@ -1,5 +1,5 @@
-alias gs='git status'
-alias gss='gs -s'
+alias gs='git status -s | grep -q . && echo "$(git status -s)" || echo "Clean as a whistle"'
+alias gss='git status'
 alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
 alias gc='git commit -m'
 alias gcod='gco $(gdb)'
@@ -17,13 +17,15 @@ alias gpr='gh pr checkout'
 alias wip="git add . && git commit -m 'wip'"
 alias wipa="git add . && git commit --amend -m 'wip'"
 alias cdr='cd $(git rev-parse --show-toplevel)'
+alias bisect='git bisect'
 
 # Git checkout with fzf
 gco() {
   if [ -n "$1" ]; then git checkout $1; return; fi
-  local branches branch
+  local branches branch tags
   branches=$(git branch -vv)
-  branch=$(echo "$branches" | fzf +m)
+  tags=$(git tag)
+  branch=$(echo "$branches $tags" | fzf +m)
   git checkout $(echo "$branch" | awk '{print $1}' | sed "s/.* //")
 }
 
