@@ -2,10 +2,13 @@
 -- Setup
 ----------------------------------------------------------------------------------------------------
 
-hyper = "cmd alt ctrl"
+-- hyper = "cmd alt ctrl"
 require('helpers')
-require('summon')
 
+local chain = require('chain')
+
+hs.loadSpoon('Hyper')
+hyper = spoon.Hyper:start({applications = {}}):setHyperKey('F19')
 
 ----------------------------------------------------------------------------------------------------
 -- Configuration File Auto-Reload
@@ -13,26 +16,12 @@ require('summon')
 
 hs.loadSpoon('ReloadConfiguration')
 spoon.ReloadConfiguration:start()
-hs.notify.new({title = 'Hammerspoon', informativeText = 'Config loaded'}):send()
+hs.notify.new({title = 'Hammerspoon', informativeText = 'Config loaded', withdrawAfter = 1}):send()
 
 
 ----------------------------------------------------------------------------------------------------
--- Misc Keybindings
+-- Summon
 ----------------------------------------------------------------------------------------------------
-
-hs.hotkey.bind(hyper, 'f1', function()
-  hs.execute('osascript -e \'tell app "System Events" to tell appearance preferences to set dark mode to not dark mode\'')
-end)
-
-hs.hotkey.bind(hyper, 'h', function()
-  hs.task.new('/opt/homebrew/bin/php', nil, {'/Users/jason/.dotfiles/yabai/hide-floating-windows.php'}):start()
-end)
-
-
---------------------------------------------------------------------------------
--- Summon Specific Apps
---------------------------------------------------------------------------------
-
 local summonModalBindings = {
   c = 'Visual Studio Code',
   b = 'Safari', -- browser
@@ -47,93 +36,138 @@ local summonModalBindings = {
   d = 'TablePlus', -- database
 }
 
-registerModalBindings(hyper, 'space', hs.fnutils.map(summonModalBindings, function(app)
-  return function() summon(app) end
-end), true)
-
-
---------------------------------------------------------------------------------
--- Yabai Window Management
---------------------------------------------------------------------------------
-
-local yabaiKeyBindings = {
-  ['left'] = 'window --focus west',
-  ['down'] = 'window --focus south',
-  ['up'] = 'window --focus north',
-  ['right'] = 'window --focus east',
-  ['n'] = 'window --focus stack.next OR window --focus stack.first',
-  ['p'] = 'window --focus stack.prev OR window --focus stack.last',
-  ['o'] = 'window --toggle zoom-parent',
-  ['m'] = 'window --toggle zoom-fullscreen',
-  ['0'] = 'space --balance',
-  ['-'] = 'window --resize left:50:0 AND window --resize right:-50:0',
-  ['='] = 'window --resize left:-50:0 AND window --resize right:50:0',
-  ['i'] = function() stackline.config:toggle('appearance.showIcons') end,
-}
-
-local yabaiShiftKeyBindings = {
-  ['-'] = 'window --resize left:200:0 AND window --resize right:-200:0',
-  ['='] = 'window --resize left:-200:0 AND window --resize right:200:0',
-}
-
-local yabaiModalBindings = {
-  ['left'] = 'window --warp west',
-  ['down'] = 'window --warp south',
-  ['up'] = 'window --warp north',
-  ['right'] = 'window --warp east',
-  ['h'] = 'window --warp west',
-  ['j'] = 'window --warp south',
-  ['k'] = 'window --warp north',
-  ['l'] = 'window --warp east',
-  ['n'] = 'window --stack next',
-  ['p'] = 'window --stack prev',
-  ['f'] = 'window --toggle float',
-  ['s'] = 'window --toggle split',
-  ['o'] = 'window --toggle zoom-parent',
-  ['m'] = 'window --toggle zoom-fullscreen',
-  [']'] = 'space --focus next',
-  ['['] = 'space --focus prev',
-  ['x'] = 'space --mirror x-axis',
-  ['0'] = 'space --balance',
-  ['i'] = function() stackline.config:toggle('appearance.showIcons') end,
-  ['c'] = 'window --grid 12:6:1:1:4:10',
-  ['r'] = function() hs.execute('launchctl kickstart -k "gui/${UID}/homebrew.mxcl.yabai"') end,
-}
-
-registerKeyBindings(hyper, hs.fnutils.map(yabaiKeyBindings, function(cmd)
-  return function() yabai(cmd) end
-end))
-
-registerKeyBindings(hyper..'shift', hs.fnutils.map(yabaiShiftKeyBindings, function(cmd)
-  return function() yabai(cmd) end
-end))
-
-local yabaiModal = registerModalBindings(hyper, 'y', hs.fnutils.map(yabaiModalBindings, function(cmd)
-  return function() yabai(cmd) end
-end))
-
-function yabaiModal:entered()
-  hs.window.highlight.ui.overlay = true
-  hs.window.highlight.ui.overlayColor = {0.5,0.25,0.75,0.25}
-  hs.window.highlight.start()
+local summon = function(app)
+  hs.application.open(app)
 end
 
-function yabaiModal:exited()
-  hs.window.highlight.stop()
+local sm = hs.hotkey.modal.new()
+sm.start = function()
+  hyper:bind({}, 'space', function()
+    print('entering sm modal')
+    sm:enter()
+  end)
+  hyper:bind({}, 'escape', function()
+    print('closing sm modal')
+    sm:exit()
+  end)
+  for key,app in pairs(summonModalBindings) do
+      sm:bind({}, key, function()
+        summon(app)
+        sm:exit()
+      end)
+  end
 end
+sm.start()
+
+
+----------------------------------------------------------------------------------------------------
+-- Grid
+----------------------------------------------------------------------------------------------------
+
+hs.window.animationDuration = 0.2
+hs.grid.setGrid('30x20')
+hs.grid.setMargins('15x15') -- id like 30x30, but https://github.com/Hammerspoon/hammerspoon/issues/2955
+
+positions = {
+  full     = '0,0 30x20',
+
+  center = {
+    large  = '4,1 22x18',
+    medium = '6,1 18x18',
+    small  = '8,2 14x16',
+    tiny   = '9,3 12x12',
+  },
+
+  quarters = {
+    left  = '0,0 5x20',
+    right  = '25,0 5x20',
+  },
+
+  thirds = {
+    left   = '0,0 10x20',
+    center = '10,0 10x20',
+    right  = '20,0 10x20',
+  },
+
+  halves = {
+    left   = '0,0 15x20',
+    right  = '15,0 15x20',
+  },
+
+  twoThirds = {
+    left   = '0,0 20x20',
+    right  = '10,0 20x20',
+  },
+
+  threeQuarters = {
+    left   = '0,0 25x20',
+    right  = '5,0 25x20',
+  },
+}
+
+--------------------------------------------------------------------------------
+-- Grid Movements
+--------------------------------------------------------------------------------
+
+local chainX = { 'thirds', 'halves', 'twoThirds', 'quarters' }
+local chainY = { 'thirds', 'full' }
+local centers = positions.center
+hyper:bind({}, 'up', chain({positions.full, centers.large, centers.medium, centers.small, centers.tiny}))
+hyper:bind({}, 'left', chain(getPositions(chainX, 'left')))
+hyper:bind({}, 'right', chain(getPositions(chainX, 'right')))
+hyper:bind({}, 'down', chain(getPositions(chainY, 'center')))
 
 
 --------------------------------------------------------------------------------
--- Yabai Stack Icons
+-- Multi Window Layouts
 --------------------------------------------------------------------------------
 
-stackline = require('stackline')
+currentLayout = nil
 
-stackline:init()
-stackline.config:set('paths.yabai', '/opt/homebrew/bin/yabai')
-stackline.config:set('appearance.size', 23)
-stackline.config:set('appearance.iconPadding', 1)
-stackline.config:set('appearance.offset.x', 5)
-stackline.config:set('appearance.offset.y', 12)
-stackline.config:set('appearance.pillThinness', 4)
-stackline.config:set('appearance.showIcons', false)
+layouts = {
+  {
+    name = 'Browser',
+    description = 'Focused in the center',
+    apps = {
+      Safari = positions.center.medium,
+    }
+  },
+  {
+    name = 'Code with Browser',
+    description = '50/50',
+    apps = {
+      Safari = positions.halves.left,
+      Code = positions.halves.right
+    }
+  },
+  {
+    name = 'Code with Browser',
+    description = '70/30',
+    apps = {
+      Safari = positions.thirds.left,
+      Code = positions.twoThirds.right
+    }
+  },
+  {
+    name = 'Code and Ray',
+    description = '75/25',
+    apps = {
+      Ray = positions.quarters.left,
+      Code = positions.threeQuarters.right
+    }
+  },
+  {
+    name = 'Code, Ray, Browser',
+    description = 'Appropriately distributed',
+    apps = {
+      Ray = positions.quarters.left,
+      Safari = '5,0 10x20',
+      Code = positions.halves.right
+    }
+  }
+}
+
+bindLayouts(layouts)
+hyper:bind({}, 'r', function () resetLayout() end)
+hyper:bind({}, 'm', function () toggleMaximized() end)
+hyper:bind({}, 'f', function () toggleZenFocus() end)

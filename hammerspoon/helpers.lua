@@ -1,4 +1,18 @@
 --------------------------------------------------------------------------------
+-- Language Helpers
+--------------------------------------------------------------------------------
+
+function map(f, t)
+  n = {}
+
+  for k,v in pairs(t) do
+    n[k] = f(v);
+  end
+
+  return n;
+end
+
+--------------------------------------------------------------------------------
 -- Modal Helpers
 --------------------------------------------------------------------------------
 
@@ -36,47 +50,6 @@ end
 
 
 --------------------------------------------------------------------------------
--- Yabai Helpers
---------------------------------------------------------------------------------
-
-function yabaiCmd(cmd, fallbackCmd)
-  hs.task.new('/opt/homebrew/bin/yabai', function(exitCode)
-    if exitCode == 1 then
-      yabaiCmd(fallbackCmd)
-    end
-  end, hs.fnutils.concat({'-m'}, cmd)):start()
-end
-
-function yabai(binding, fallbackCmd)
-  if type(binding) == 'string' then
-    return yabaiRunFromString(binding)
-  elseif type(binding) == 'table' then
-    return yabaiCmd(binding, fallbackCmd)
-  elseif type(binding) == 'function' then
-    return binding()
-  else
-    print('incompatible binding type')
-  end
-end
-
-function yabaiRunFromString(binding)
-  if string.match(binding, 'OR') then
-    local cmds = hs.fnutils.map(hs.fnutils.split(binding, ' OR '), function(cmd)
-      return hs.fnutils.split(cmd, ' ');
-    end)
-    yabaiCmd(cmds[1], cmds[2])
-  elseif string.match(binding, 'AND') then
-    hs.fnutils.each(hs.fnutils.split(binding, ' AND '), function(cmd)
-      yabaiCmd(hs.fnutils.split(cmd, ' '))
-      print(hs.inspect(hs.fnutils.split(cmd, ' ')))
-    end)
-  else
-    yabaiCmd(hs.fnutils.split(binding, ' '))
-  end
-end
-
-
---------------------------------------------------------------------------------
 -- Binding Helpers
 --------------------------------------------------------------------------------
 
@@ -94,4 +67,159 @@ function registerModalBindings(mods, key, bindings, exitAfter)
     modalBind(modal, modalKey, binding, exitAfter)
   end
   return modal
+end
+
+
+--------------------------------------------------------------------------------
+-- Grid Helpers
+--------------------------------------------------------------------------------
+
+function moveApp(application, cell)
+  local app = getOrOpenApp(application)
+  
+  -- until the app open issue is fixed, we'll just
+  -- bail here and you can re-run the command
+  if app == nil then return end 
+  
+  app:unhide()
+  local window = app:mainWindow()
+  if window then
+    hs.grid.set(window, cell, hs.screen.mainScreen())
+  end
+end
+
+function getOrOpenApp(application)
+  local app = hs.application.get(application)
+  if not app then
+    -- this should wait for the app to open. the app *does* open 
+    -- but it always returns nil. even when increasing the time.
+    app = hs.application.open(application, 0, true)
+  end
+  return app
+end
+
+function hideApp(application)
+  local app = hs.application.get(application)
+  if app == nil then
+    return false
+  end
+  app:hide()
+end
+
+function getPositions(sizes, leftOrRight, topOrBottom)
+  local applyLeftOrRight = function (size)
+    if type(positions[size]) == 'string' then
+      return positions[size]
+    end
+    return positions[size][leftOrRight]
+  end
+
+  local applyTopOrBottom = function (position)
+    local h = math.floor(string.match(position, 'x([0-9]+)') / 2)
+    position = string.gsub(position, 'x[0-9]+', 'x'..h)
+    if topOrBottom == 'bottom' then
+      local y = math.floor(string.match(position, ',([0-9]+)') + h)
+      position = string.gsub(position, ',[0-9]+', ','..y)
+    end
+    return position
+  end
+
+  if (topOrBottom) then
+    return map(applyTopOrBottom, map(applyLeftOrRight, sizes))
+  end
+
+  return map(applyLeftOrRight, sizes)
+end
+
+--------------------------------------------------------------------------------
+-- Layout Helpers
+--------------------------------------------------------------------------------
+
+currentLayout = nil
+
+function bindLayouts(layouts)
+  local chooser = hs.chooser.new(function(choice)
+    local layout = choice.text
+    if layout then
+      currentLayout = layout
+      setLayout(layout)
+    end
+  end)
+
+  hyper:bind({}, 'l', function()
+    local choices = map(function(layout)
+      return {
+        ["text"] = layout.name,
+        ["subText"] = layout.description,
+      }
+    end, layouts)
+    chooser:searchSubText(true):choices(choices):query(''):show()
+  end)
+end
+
+function setLayout(name)
+  local layout = hs.fnutils.find(layouts, function(l)
+    return l.name == name
+  end)
+  for app,cell in pairs(layout.apps) do
+    moveApp(app, cell)
+  end
+  hideWindowsExcept(layout.apps)
+end
+
+function resetLayout()
+  if currentLayout then setLayout(currentLayout) end
+end
+
+function hideWindowsExcept(allowed)
+  local windows = hs.window.visibleWindows()
+  for _,window in pairs(windows) do
+    local app = window:application()
+    local appName = app:name()
+    if not allowed[appName] then
+      app:hide()
+    end
+  end
+end
+
+
+-- Maximizes a window, remembering the previous size.
+-- When run a second time, it will restore the window to its previous size.
+--
+-- Stores window sizes in a table keyed by window ID.
+-- { ["123"] = "10,20 3x3", ["456"] = "10,20 3x3" }
+maximizedWindows = {}
+function toggleMaximized()
+  local win = hs.window.focusedWindow()
+  local id = win:id()
+
+  if maximizedWindows[id] then
+    hs.grid.set(win, maximizedWindows[id])
+    maximizedWindows[id] = nil
+  else
+    local cell = hs.grid.get(win)
+    maximizedWindows[id] = cell
+    hs.grid.maximizeWindow(win)
+  end
+end
+
+
+-- Moves a window into the center of the screen, with every other app hidden.
+-- Running a second time will return to the previous layout.
+zenWindow = nil
+layoutBeforeZen = nil
+function toggleZenFocus()
+  local zenPosition = positions.center.medium
+  local win = hs.window.focusedWindow()
+
+  if zenWindow == win.id then
+    zenWindow = nil
+    if layoutBeforeZen then setLayout(layoutBeforeZen) end
+  else
+    local app = win:application()
+    hs.grid.set(win, zenPosition)
+    hideWindowsExcept({[win:application():name()] = true})
+    layoutBeforeZen = currentLayout
+    zenWindow = win.id
+  end
 end
