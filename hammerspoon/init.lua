@@ -3,8 +3,8 @@
 ----------------------------------------------------------------------------------------------------
 
 require('helpers')
-
-local chain = require('chain')
+require('modals')
+require('windows')
 
 hs.loadSpoon('Hyper')
 hyper = spoon.Hyper:start({applications = {}}):setHyperKey('F19')
@@ -89,6 +89,7 @@ positions = {
 -- Grid Movements
 --------------------------------------------------------------------------------
 
+local chain = require('chain')
 local chainX = { 'thirds', 'halves', 'twoThirds', 'quarters' }
 local chainY = { 'thirds', 'full' }
 local centers = positions.center
@@ -145,7 +146,7 @@ layouts = {
   }
 }
 
-bindLayouts(layouts)
-hyper:bind({}, 'r', function () resetLayout() end)
-hyper:bind({}, 'm', function () toggleMaximized() end)
-hyper:bind({}, 'f', function () toggleZenFocus() end)
+bindLayoutSelector('l', layouts)
+hyper:bind({}, 'r', resetLayout)
+hyper:bind({}, 'm', toggleMaximized)
+hyper:bind({}, 'f', function() toggleZenFocus(positions.center.medium) end)
