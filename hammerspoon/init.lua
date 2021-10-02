@@ -22,7 +22,9 @@ hs.notify.new({title = 'Hammerspoon', informativeText = 'Config loaded', withdra
 ----------------------------------------------------------------------------------------------------
 -- Summon
 ----------------------------------------------------------------------------------------------------
-local summonModalBindings = {
+
+local summon = require('summon')
+summon.start('space', {
   c = 'Visual Studio Code',
   b = 'Safari', -- browser
   s = 'Slack',
@@ -34,30 +36,7 @@ local summonModalBindings = {
   f = 'Finder',
   t = 'Tinkerwell',
   d = 'TablePlus', -- database
-}
-
-local summon = function(app)
-  hs.application.open(app)
-end
-
-local sm = hs.hotkey.modal.new()
-sm.start = function()
-  hyper:bind({}, 'space', function()
-    print('entering sm modal')
-    sm:enter()
-  end)
-  hyper:bind({}, 'escape', function()
-    print('closing sm modal')
-    sm:exit()
-  end)
-  for key,app in pairs(summonModalBindings) do
-      sm:bind({}, key, function()
-        summon(app)
-        sm:exit()
-      end)
-  end
-end
-sm.start()
+})
 
 
 ----------------------------------------------------------------------------------------------------

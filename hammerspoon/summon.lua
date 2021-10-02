@@ -1,32 +1,30 @@
---------------------------------------------------------------------------------
--- Summon App / Toggle App Visibility
---------------------------------------------------------------------------------
-
-local currentlyFocusedAppName
-local currentlyFocusedWindow
-local lastFocusedWindow
-
-hs.window.filter.default:subscribe(hs.window.filter.windowFocused, function(window, appName)
-  currentlyFocusedWindow = window
-  currentlyFocusedAppName = appName
-  print('-- Focused: (App: "' .. appName .. '", Window: "' .. window:title() .. '")')
-end)
-
-hs.window.filter.default:subscribe(hs.window.filter.windowUnfocused, function(window, appName)
-  lastFocusedWindow = window
-end)
-
-function summon(appName, hideOnClose)
-  hideOnClose = hideOnClose or false
-  if currentlyFocusedAppName == appName and not next(hs.application.find(appName):allWindows()) then
-    hs.application.open(appName)
-  elseif currentlyFocusedAppName ~= appName then
-    hs.application.open(appName)
-  else
-    if hideOnClose then
-      currentlyFocusedWindow:application():hide()
-    elseif lastFocusedWindow then
-      lastFocusedWindow:focus()
-    end
-  end
+local summon = function(app)
+  hs.application.open(app)
 end
+  
+local sm = hs.hotkey.modal.new()
+
+sm.start = function(key, bindings)
+  local timer
+
+  hyper:bind({}, 'space', function() sm:enter() end)
+  sm:bind({}, 'escape', function() sm:exit() end)
+
+  function sm:entered()
+    timer = hs.timer.doAfter(1, function() sm:exit() end)
+  end
+
+  function sm:exited()
+    if timer then timer:stop() end
+  end
+
+  for key,app in pairs(bindings) do
+      sm:bind({}, key, function()
+        summon(app)
+        sm:exit()
+      end)
+  end
+
+end
+
+return sm
