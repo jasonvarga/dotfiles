@@ -113,6 +113,13 @@ layouts = {
     }
   },
   {
+    name = 'Code',
+    description = 'Focused in the center',
+    apps = {
+      Code = positions.center.medium,
+    }
+  },
+  {
     name = 'Code and Browser',
     description = 'Code 50%, Browser 50%',
     apps = {
@@ -151,3 +158,4 @@ bindLayoutSelector('l', layouts)
 hyper:bind({}, 'r', resetLayout)
 hyper:bind({}, 'm', toggleMaximized)
 hyper:bind({}, 'f', function() toggleZenFocus(positions.center.medium) end)
+require('autosizes')
