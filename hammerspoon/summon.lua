@@ -1,30 +1,14 @@
-local summon = function(app)
-  hs.application.open(app)
-end
-  
-local sm = hs.hotkey.modal.new()
+local summon = {}
 
-sm.start = function(key, bindings)
-  local timer
-
-  hyper:bind({}, 'space', function() sm:enter() end)
-  sm:bind({}, 'escape', function() sm:exit() end)
-
-  function sm:entered()
-    timer = hs.timer.doAfter(1, function() sm:exit() end)
-  end
-
-  function sm:exited()
-    if timer then timer:stop() end
-  end
+summon.start = function(modalKey, bindings)
+  local modal = modal('Summon', modalKey, {timeout=1})
 
   for key,app in pairs(bindings) do
-      sm:bind({}, key, function()
-        summon(app)
-        sm:exit()
+      modal:bind({}, key, function()
+        hs.application.open(app)
+        modal:exit()
       end)
   end
-
 end
 
-return sm
+return summon

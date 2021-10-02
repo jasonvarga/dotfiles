@@ -20,56 +20,28 @@ end
 -- Modal Helpers
 --------------------------------------------------------------------------------
 
-function activateModal(mods, key, timeout)
-  timeout = timeout or false
-  local modal = hs.hotkey.modal.new(mods, key)
+function modal(name, key, opts)
+  local log = hs.logger.new('modal', 'debug')
+  local modal = hs.hotkey.modal.new()
+  local mods = opts.mods or {}
+  local timeout = opts.timeout or false
   local timer
+
+  hyper:bind(mods, key, function() modal:enter() end)
   modal:bind('', 'escape', nil, function() modal:exit() end)
-  modal:bind('', 'q', nil, function() modal:exit() end)
-  modal:bind('ctrl', 'c', nil, function() modal:exit() end)
+
   function modal:entered()
+    log.d('modal ' .. name .. ' entered')
     if timeout then
       timer = hs.timer.doAfter(1, function() modal:exit() end)
     end
-    print('modal entered')
   end
+
   function modal:exited()
-    if timer then
-      timer:stop()
-    end
-    print('modal exited')
+    log.d('modal ' .. name .. ' exited')
+    if timer then timer:stop() end
   end
-  return modal
-end
 
-function modalBind(modal, key, fn, exitAfter)
-  exitAfter = exitAfter or false
-  modal:bind('', key, nil, function()
-    fn()
-    if exitAfter then
-      modal:exit()
-    end
-  end)
-end
-
-
---------------------------------------------------------------------------------
--- Binding Helpers
---------------------------------------------------------------------------------
-
-function registerKeyBindings(mods, bindings)
-  for key,binding in pairs(bindings) do
-    hs.hotkey.bind(mods, key, binding)
-  end
-end
-
-function registerModalBindings(mods, key, bindings, exitAfter)
-  exitAfter = exitAfter or false
-  local timeout = exitAfter == true
-  local modal = activateModal(mods, key, timeout)
-  for modalKey,binding in pairs(bindings) do
-    modalBind(modal, modalKey, binding, exitAfter)
-  end
   return modal
 end
 
