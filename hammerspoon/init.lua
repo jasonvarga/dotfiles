@@ -2,13 +2,15 @@
 -- Setup
 ----------------------------------------------------------------------------------------------------
 
--- hyper = "cmd alt ctrl"
 require('helpers')
 
 local chain = require('chain')
 
 hs.loadSpoon('Hyper')
 hyper = spoon.Hyper:start({applications = {}}):setHyperKey('F19')
+
+hs.window.animationDuration = 0.2
+
 
 ----------------------------------------------------------------------------------------------------
 -- Configuration File Auto-Reload
@@ -43,7 +45,6 @@ summon.start('space', {
 -- Grid
 ----------------------------------------------------------------------------------------------------
 
-hs.window.animationDuration = 0.2
 hs.grid.setGrid('30x20')
 hs.grid.setMargins('15x15') -- id like 30x30, but https://github.com/Hammerspoon/hammerspoon/issues/2955
 
@@ -100,8 +101,6 @@ hyper:bind({}, 'down', chain(getPositions(chainY, 'center')))
 --------------------------------------------------------------------------------
 -- Multi Window Layouts
 --------------------------------------------------------------------------------
-
-currentLayout = nil
 
 layouts = {
   {
