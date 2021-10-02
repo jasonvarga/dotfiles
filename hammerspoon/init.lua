@@ -56,9 +56,10 @@ positions = {
     medium = '6,1 18x18',
     small  = '8,2 14x16',
     tiny   = '9,3 12x12',
+    mini   = '11,4 8x10',
   },
 
-  quarters = {
+  sixths = {
     left  = '0,0 5x20',
     right  = '25,0 5x20',
   },
@@ -79,7 +80,7 @@ positions = {
     right  = '10,0 20x20',
   },
 
-  threeQuarters = {
+  fiveSixths = {
     left   = '0,0 25x20',
     right  = '5,0 25x20',
   },
@@ -90,7 +91,7 @@ positions = {
 --------------------------------------------------------------------------------
 
 local chain = require('chain')
-local chainX = { 'thirds', 'halves', 'twoThirds', 'quarters' }
+local chainX = { 'thirds', 'halves', 'twoThirds', 'fiveSixths', 'sixths', }
 local chainY = { 'thirds', 'full' }
 local centers = positions.center
 hyper:bind({}, 'up', chain({positions.full, centers.large, centers.medium, centers.small, centers.tiny}))
@@ -112,16 +113,16 @@ layouts = {
     }
   },
   {
-    name = 'Code with Browser',
-    description = '50/50',
+    name = 'Code and Browser',
+    description = 'Code 50%, Browser 50%',
     apps = {
       Safari = positions.halves.left,
       Code = positions.halves.right
     }
   },
   {
-    name = 'Code with Browser',
-    description = '70/30',
+    name = 'Code and Browser (narrow)',
+    description = 'Code 66%, Browser 33%',
     apps = {
       Safari = positions.thirds.left,
       Code = positions.twoThirds.right
@@ -129,17 +130,17 @@ layouts = {
   },
   {
     name = 'Code and Ray',
-    description = '75/25',
+    description = 'Code 83%, Ray 17%',
     apps = {
-      Ray = positions.quarters.left,
-      Code = positions.threeQuarters.right
+      Ray = positions.sixths.left,
+      Code = positions.fiveSixths.right
     }
   },
   {
     name = 'Code, Ray, Browser',
-    description = 'Appropriately distributed',
+    description = 'Code 50%, Browser 33%, Ray 17%',
     apps = {
-      Ray = positions.quarters.left,
+      Ray = positions.sixths.left,
       Safari = '5,0 10x20',
       Code = positions.halves.right
     }
