@@ -41,7 +41,6 @@ function bindLayoutSelector(key, layouts)
   local chooser = hs.chooser.new(function(choice)
     local layout = choice.text
     if layout then
-      wm.currentLayout = layout
       setLayout(layout)
     end
   end)
@@ -65,6 +64,7 @@ function setLayout(name)
     moveApp(app, cell)
   end
   hideWindowsExcept(layout.apps)
+  wm.currentLayout = name
 end
 
 function resetLayout()
