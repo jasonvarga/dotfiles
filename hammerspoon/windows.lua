@@ -1,3 +1,5 @@
+require('autosizes')
+
 local wm = {
   currentLayout = nil,
   maximizedWindows = {},
@@ -26,7 +28,7 @@ function hideApp(application)
   app:hide()
 end
 
-function bindLayoutSelector(key, layouts)
+function bindLayoutSelector(key)
   local chooser = hs.chooser.new(function(choice)
     local layout = choice.text
     if layout then
