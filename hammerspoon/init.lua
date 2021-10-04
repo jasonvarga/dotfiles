@@ -5,6 +5,7 @@
 require('helpers')
 require('modals')
 require('windows')
+apps = require('apps')
 hyper = require('hyper'):setHyperKey('F19')
 
 hs.window.animationDuration = 0.2
@@ -18,21 +19,7 @@ local notification = hs.notify.new({title = 'Hammerspoon', informativeText = 'Co
 -- Summon
 ----------------------------------------------------------------------------------------------------
 
-local summon = require('summon')
-summon.start('space', {
-  c = 'Visual Studio Code',
-  b = 'Safari', -- browser
-  s = 'Slack',
-  m = 'Spotify', -- music
-  i = 'iTerm',
-  g = 'Tower',
-  r = 'Ray',
-  e = 'Mimestream', -- email
-  f = 'Finder',
-  t = 'Tinkerwell',
-  d = 'TablePlus', -- database
-})
-
+require('summon').via('o')
 
 ----------------------------------------------------------------------------------------------------
 -- Grid
