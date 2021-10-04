@@ -11,7 +11,7 @@ function modal(name, key, opts)
   function modal:entered()
     log.d('modal ' .. name .. ' entered')
     if timeout then
-      timer = hs.timer.doAfter(1, function() modal:exit() end)
+      timer = hs.timer.doAfter(timeout, function() modal:exit() end)
     end
   end
 
