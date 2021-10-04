@@ -53,7 +53,7 @@ return {
     },
     Tower = {
         id = 'com.fournova.Tower3',
-        key = 'g',
+        key = 'g', -- git
         position = positions.center.large,
     },
     Ray = {
