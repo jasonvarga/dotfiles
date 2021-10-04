@@ -9,7 +9,8 @@ alias gplr='git pull --rebase'
 alias gpsh='git push'
 alias gnb='git checkout -b'
 alias nah='git reset --hard; git clean -df;'
-alias glt='git describe --tags --abbrev=0'
+alias glt='git describe --tags --abbrev=0' # git latest tag
+alias gcslt='git log $(glt)..HEAD --oneline --no-decorate' # git commits since latest tag
 alias gt='gittower .'
 alias gdb='git remote show origin | grep "HEAD branch" | cut -d " " -f5'
 alias gdbardpl='gdbard && gpl'
