@@ -37,6 +37,7 @@ function handleAppVisible(app, appName)
     Slack = function () hs.grid.set(app:mainWindow(), positions.center.tiny) end,
     Tower = function () hs.grid.set(app:mainWindow(), positions.center.large) end,
     Messages = function () hs.grid.set(app:mainWindow(), positions.center.mini) end,
+    iTerm2 = function () hs.grid.set(app:mainWindow(), positions.center.tiny) end,
   }
 
   if rules[appName] then
