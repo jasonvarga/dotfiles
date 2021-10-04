@@ -25,7 +25,7 @@ function handleAppVisible(app, appName)
       end
     end,
     Code = function ()
-      if rayIsVisible then setLayout('Code, Ray, Browser')
+      if rayIsVisible and safariIsVisible then setLayout('Code, Ray, Browser')
       elseif safariIsVisible then setLayout('Code and Browser') end
     end,
     Ray = function ()
@@ -66,8 +66,10 @@ function handleAppHidden(app, appName)
       if safariIsVisible then setLayout('Browser') end
     end,
     Ray = function ()
-      if safariIsVisible then setLayout('Code and Browser')
-      elseif codeIsVisible then setLayout('Code') end
+      if codeIsVisible then
+        if safariIsVisible then setLayout('Code and Browser')
+        else setLayout('Code') end
+      end
     end,
   }
 
