@@ -21,10 +21,10 @@ function handleAppVisible(app, appName)
   end
 
   local rule = apps[appName].onShow
-  if rule then hs.timer.doAfter(0.5, rule) end
+  if rule then rule() end
 end
 
 function handleAppHidden(app, appName)
   local rule = apps[appName].onHide
-  if rule then hs.timer.doAfter(0.5, rule) end
+  if rule then rule() end
 end
