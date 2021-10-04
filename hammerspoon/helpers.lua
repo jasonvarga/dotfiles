@@ -36,3 +36,20 @@ function getPositions(sizes, leftOrRight, topOrBottom)
 
   return map(applyLeftOrRight, sizes)
 end
+
+function getApp(appName)
+  return hs.application.get(apps[appName].id)
+end
+
+function isAppVisible(appName)
+  local app = getApp(appName)
+  return app and not app:isHidden()
+end
+
+function isAppOpen(appName)
+  return getApp(appName) ~= nil
+end
+
+function isAppClosed(appName)
+  return not isAppOpen(appName)
+end
