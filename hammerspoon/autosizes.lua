@@ -1,4 +1,10 @@
-hs.application.watcher.new(function(appName, event, app)
+-- Subscribe to windows being closed. If the app has no visible windows, hide the app.
+-- The automatic layouts rely on app hiding events, not window closing events.
+wf = hs.window.filter.new()
+wf:subscribe(hs.window.filter.hasNoWindows, function(win) win:application():hide() end)
+
+-- When apps are opened/quit/hidden/unhidden, apply various rules.
+appwatcher = hs.application.watcher.new(function(appName, event, app)
   local handlers = {
     [hs.application.watcher.launched] = handleAppVisible,
     [hs.application.watcher.unhidden] = handleAppVisible,
