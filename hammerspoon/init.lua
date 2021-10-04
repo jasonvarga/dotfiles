@@ -14,8 +14,6 @@ hs.window.animationDuration = 0.2
 hs.loadSpoon('ReloadConfiguration'):start()
 local notification = hs.notify.new({title = 'Hammerspoon', informativeText = 'Config loading...'}):send()
 
-
-
 ----------------------------------------------------------------------------------------------------
 -- Summon
 ----------------------------------------------------------------------------------------------------
@@ -32,7 +30,6 @@ hs.grid.setMargins('15x15') -- id like 30x30, but https://github.com/Hammerspoon
 --------------------------------------------------------------------------------
 -- Grid Movements
 --------------------------------------------------------------------------------
-
 
 local chain = require('chain')
 local chainX = { 'thirds', 'halves', 'twoThirds', 'fiveSixths', 'sixths', }
@@ -103,6 +100,13 @@ hyper:bind({}, 'r', resetLayout)
 hyper:bind({}, 'm', toggleMaximized)
 hyper:bind({}, 'f', function() toggleZenFocus(positions.center.medium) end)
 require('autosizes')
+
+----------------------------------------------------------------------------------------------------
+-- Misc Keybindings
+----------------------------------------------------------------------------------------------------
+
+hyper:bind({}, '`', hs.toggleConsole)
+hyper:bind({}, 'f1', function() hs.execute('osascript -e \'tell app "System Events" to tell appearance preferences to set dark mode to not dark mode\'') end)
 
 --------------------------------------------------------------------------------
 -- Done!
