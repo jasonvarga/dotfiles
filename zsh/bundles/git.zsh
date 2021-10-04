@@ -29,6 +29,21 @@ gco() {
   git checkout $(echo "$branch" | awk '{print $1}' | sed "s/.* //")
 }
 
+gbd() {
+  if [ -n "$1" ]; then git branch -d $1; return; fi
+  local branches branch selected
+  branches=$(git branch -vv) &&
+  branch=$(echo "$branches" | fzf +m) &&
+  selected=$(echo "$branch" | awk '{print $1}' | sed "s/.* //")
+  echo "Are you sure you would like to delete branch [$selected]? (Type 'delete' to confirm)"
+  read confirmation
+  if [[ "$confirmation" == "delete" ]]; then
+    git branch -D $selected
+  else
+    echo "Aborted"
+  fi
+}
+
 # Switches to the default branch and deletes the branch it was just on.
 # gdbard = "Git Delete Branch And Return to Default"
 function gdbard {
