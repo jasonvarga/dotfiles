@@ -11,14 +11,9 @@ hyper = spoon.Hyper:start({applications = {}}):setHyperKey('F19')
 
 hs.window.animationDuration = 0.2
 
+hs.loadSpoon('ReloadConfiguration'):start()
+local notification = hs.notify.new({title = 'Hammerspoon', informativeText = 'Config loading...'}):send()
 
-----------------------------------------------------------------------------------------------------
--- Configuration File Auto-Reload
-----------------------------------------------------------------------------------------------------
-
-hs.loadSpoon('ReloadConfiguration')
-spoon.ReloadConfiguration:start()
-hs.notify.new({title = 'Hammerspoon', informativeText = 'Config loaded', withdrawAfter = 1}):send()
 
 
 ----------------------------------------------------------------------------------------------------
@@ -159,3 +154,10 @@ hyper:bind({}, 'r', resetLayout)
 hyper:bind({}, 'm', toggleMaximized)
 hyper:bind({}, 'f', function() toggleZenFocus(positions.center.medium) end)
 require('autosizes')
+
+--------------------------------------------------------------------------------
+-- Done!
+--------------------------------------------------------------------------------
+
+notification:withdraw()
+hs.notify.new({title = 'Hammerspoon', informativeText = 'Config loaded', withdrawAfter = 1}):send()
