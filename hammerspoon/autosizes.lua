@@ -17,7 +17,7 @@ end):start()
 
 function handleAppVisible(app, appName)
   if apps[appName].position then
-    hs.grid.set(app:mainWindow(), apps[appName].position)
+    positionWindow(app:mainWindow(), apps[appName].position)
   end
 
   local rule = apps[appName].onShow

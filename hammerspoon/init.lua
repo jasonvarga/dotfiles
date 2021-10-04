@@ -44,6 +44,7 @@ bindHyper('down', chain(getPositions(chainY, 'center')))
 bindLayoutSelector('l')
 bindHyper('r', resetLayout)
 bindHyper('m', toggleMaximized)
+bindHyper('d', setToDefaultPosition)
 bindHyper('f', function() toggleZenFocus(positions.center.medium) end)
 
 ----------------------------------------------------------------------------------------------------

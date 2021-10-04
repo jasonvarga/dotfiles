@@ -11,9 +11,11 @@ function moveApp(application, cell)
   local app = getOrOpenApp(application)
   app:unhide()
   local window = app:mainWindow()
-  if window then
-    hs.grid.set(window, cell, hs.screen.mainScreen())
-  end
+  if window then positionWindow(window, cell) end
+end
+
+function positionWindow(window, cell)
+  hs.grid.set(window, cell)
 end
 
 function getOrOpenApp(application)
@@ -106,6 +108,18 @@ function toggleZenFocus(cell)
     hideWindowsExcept({[win:application():name()] = true})
     wm.layoutBeforeZen = wm.currentLayout
     wm.zenWindow = win.id
+  end
+end
+
+-- Moves a window to its default position as defined in apps.lua
+function setToDefaultPosition()
+  local win = hs.window.focusedWindow()
+  local app = win:application()
+  local config = hs.fnutils.find(apps, function(config) return config.id == app:bundleID() end)
+  if config.position then
+    positionWindow(win, config.position)
+  else
+    hs.alert('App ' .. app:name() .. ' has no default position')
   end
 end
 
