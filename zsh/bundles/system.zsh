@@ -6,3 +6,9 @@ alias ip6='curl ipv6.icanhazip.com'
 mostusedcommands() {
     history | awk '{a[$2]++}END{for(i in a){print a[i] " " i}}' | sort -rn | head -15
 }
+
+function bundle-id() {
+    osascript <<-EOF
+    id of app "$1"
+EOF
+}
