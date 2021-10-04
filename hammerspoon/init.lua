@@ -13,6 +13,9 @@ hyper = require('hyper'):setHyperKey('F19')
 hs.loadSpoon('ReloadConfiguration'):start()
 local notification = hs.notify.new({title = 'Hammerspoon', informativeText = 'Config loading...'}):send()
 
+hs.alert.defaultStyle.textSize = 16
+hs.alert.defaultStyle.radius = 6
+
 ----------------------------------------------------------------------------------------------------
 -- Summon
 ----------------------------------------------------------------------------------------------------
