@@ -10,9 +10,9 @@ hs.application.watcher.new(function(appName, event, app)
 end):start()
 
 function handleAppVisible(app, appName)
-  local code = hs.application.get('Code')
-  local safari = hs.application.get('Safari')
-  local ray = hs.application.get('Ray')
+  local code = hs.application.get(apps['Code'].id)
+  local safari = hs.application.get(apps['Safari'].id)
+  local ray = hs.application.get(apps['Ray'].id)
   local rayIsVisible = ray and not ray:isHidden()
   local safariIsVisible = safari and not safari:isHidden()
   local codeIsVisible = code and not code:isHidden()
@@ -29,7 +29,7 @@ function handleAppVisible(app, appName)
       elseif safariIsVisible then setLayout('Code and Browser') end
     end,
     Ray = function ()
-      if not code then getOrOpenApp('Visual Studio Code') end
+      if not code then getOrOpenApp('Code') end
       if safariIsVisible then setLayout('Code, Ray, Browser')
       else setLayout('Code and Ray') end
     end,
@@ -45,9 +45,9 @@ function handleAppVisible(app, appName)
 end
 
 function handleAppHidden(app, appName)
-  local code = hs.application.get('Code')
-  local safari = hs.application.get('Safari')
-  local ray = hs.application.get('Ray')
+  local code = hs.application.get(apps['Code'].id)
+  local safari = hs.application.get(apps['Safari'].id)
+  local ray = hs.application.get(apps['Ray'].id)
   local rayIsVisible = ray and not ray:isHidden()
   local safariIsVisible = safari and not safari:isHidden()
   local codeIsVisible = code and not code:isHidden()

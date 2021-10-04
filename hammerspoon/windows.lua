@@ -7,11 +7,6 @@ local wm = {
 
 function moveApp(application, cell)
   local app = getOrOpenApp(application)
-
-  -- until the app open issue is fixed, we'll just
-  -- bail here and you can re-run the command
-  if app == nil then return end
-
   app:unhide()
   local window = app:mainWindow()
   if window then
@@ -20,13 +15,7 @@ function moveApp(application, cell)
 end
 
 function getOrOpenApp(application)
-  local app = hs.application.get(application)
-  if not app then
-    -- this should wait for the app to open. the app *does* open
-    -- but it always returns nil. even when increasing the time.
-    app = hs.application.open(application, 0, true)
-  end
-  return app
+  return hs.application.open(apps[application].id, 10)
 end
 
 function hideApp(application)
