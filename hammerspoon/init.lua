@@ -32,23 +32,23 @@ local chain = require('chain')
 local chainX = { 'thirds', 'halves', 'twoThirds', 'fiveSixths', 'sixths', }
 local chainY = { 'thirds', 'full' }
 local centers = positions.center
-hyper:bind({}, 'up', chain({positions.full, centers.large, centers.medium, centers.small, centers.tiny}))
-hyper:bind({}, 'left', chain(getPositions(chainX, 'left')))
-hyper:bind({}, 'right', chain(getPositions(chainX, 'right')))
-hyper:bind({}, 'down', chain(getPositions(chainY, 'center')))
+bindHyper('up', chain({positions.full, centers.large, centers.medium, centers.small, centers.tiny}))
+bindHyper('left', chain(getPositions(chainX, 'left')))
+bindHyper('right', chain(getPositions(chainX, 'right')))
+bindHyper('down', chain(getPositions(chainY, 'center')))
 
 -- Multi-window layouts
 bindLayoutSelector('l')
-hyper:bind({}, 'r', resetLayout)
-hyper:bind({}, 'm', toggleMaximized)
-hyper:bind({}, 'f', function() toggleZenFocus(positions.center.medium) end)
+bindHyper('r', resetLayout)
+bindHyper('m', toggleMaximized)
+bindHyper('f', function() toggleZenFocus(positions.center.medium) end)
 
 ----------------------------------------------------------------------------------------------------
 -- Misc Keybindings
 ----------------------------------------------------------------------------------------------------
 
-hyper:bind({}, '`', hs.toggleConsole)
-hyper:bind({}, 'f1', function() hs.execute('osascript -e \'tell app "System Events" to tell appearance preferences to set dark mode to not dark mode\'') end)
+bindHyper('`', hs.toggleConsole)
+bindHyper('f1', function() hs.execute('osascript -e \'tell app "System Events" to tell appearance preferences to set dark mode to not dark mode\'') end)
 
 --------------------------------------------------------------------------------
 -- Done!

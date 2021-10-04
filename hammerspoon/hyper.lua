@@ -21,4 +21,8 @@ function m:bind(...)
   return self
 end
 
+function bindHyper(key, fn)
+  hyper:bind({}, key, fn)
+end
+
 return m
