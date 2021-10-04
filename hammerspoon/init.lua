@@ -5,9 +5,7 @@
 require('helpers')
 require('modals')
 require('windows')
-
-hs.loadSpoon('Hyper')
-hyper = spoon.Hyper:start({applications = {}}):setHyperKey('F19')
+hyper = require('hyper'):setHyperKey('F19')
 
 hs.window.animationDuration = 0.2
 
