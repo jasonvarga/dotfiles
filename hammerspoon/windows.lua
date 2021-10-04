@@ -119,7 +119,7 @@ function setToDefaultPosition()
   if config.position then
     positionWindow(win, config.position)
   else
-    hs.alert('App ' .. app:name() .. ' has no default position')
+    hs.alert(app:name() .. ' has no default position')
   end
 end
 
