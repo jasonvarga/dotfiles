@@ -42,8 +42,8 @@ return {
     description = 'Code 50%, Browser 33%, Ray 17%',
     apps = {
       Ray = positions.sixths.left,
-      Safari = '5,0 10x20',
-      Code = positions.halves.right
+      Code = '5,0 15x20',
+      Safari = '20,0 10x20'
     }
   }
 }

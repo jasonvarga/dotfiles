@@ -10,8 +10,9 @@ local wm = {
 function moveApp(application, cell)
   local app = getOrOpenApp(application)
   app:unhide()
-  local window = app:mainWindow()
-  if window then positionWindow(window, cell) end
+  for _, window in pairs(app:allWindows()) do
+    positionWindow(window, cell)
+  end
 end
 
 function positionWindow(window, cell)

@@ -1,7 +1,14 @@
+-- todo: don't apply rules when in focus or maximized modes
+
 -- Subscribe to windows being closed. If the app has no visible windows, hide the app.
 -- The automatic layouts rely on app hiding events, not window closing events.
 wf = hs.window.filter.new()
-wf:subscribe(hs.window.filter.hasNoWindows, function(win) win:application():hide() end)
+wf:subscribe(hs.window.filter.hasNoWindows, function(win)
+  -- Some apps with a window leftover still sometimes trigger the hasNoWindows
+  -- event. We'll need to check if there are windows instead of just hiding.
+  local app = win:application()
+  if #app:allWindows() == 0 then app:hide() end
+end)
 
 -- When apps are opened/quit/hidden/unhidden, apply various rules.
 appwatcher = hs.application.watcher.new(function(appName, event, app)
@@ -16,15 +23,18 @@ appwatcher = hs.application.watcher.new(function(appName, event, app)
 end):start()
 
 function handleAppVisible(app, appName)
-  if apps[appName].position then
-    positionWindow(app:mainWindow(), apps[appName].position)
+  local config = apps[appName]
+  if not config then return end
+  if config.position then
+    positionWindow(app:mainWindow(), config.position)
   end
-
-  local rule = apps[appName].onShow
+  local rule = config.onShow
   if rule then rule() end
 end
 
 function handleAppHidden(app, appName)
-  local rule = apps[appName].onHide
+  local config = apps[appName]
+  if not config then return end
+  local rule = config.onHide
   if rule then rule() end
 end
