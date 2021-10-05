@@ -13,7 +13,6 @@ alias glt='git describe --tags --abbrev=0' # git latest tag
 alias gcslt='git log $(glt)..HEAD --oneline --no-decorate' # git commits since latest tag
 alias gt='gittower .'
 alias gdb='git remote show origin | grep "HEAD branch" | cut -d " " -f5'
-alias gdbardpl='gdbard && gpl'
 alias gpr='gh pr checkout'
 alias wip="git add . && git commit -m 'wip'"
 alias wipa="git add . && git commit --amend -m 'wip'"
@@ -25,9 +24,17 @@ gco() {
   if [ -n "$1" ]; then git checkout $1; return; fi
   local branches branch tags
   branches=$(git branch -vv)
-  tags=$(git tag)
-  branch=$(echo "$branches $tags" | fzf +m)
+  branch=$(echo "$branches" | fzf +m)
   git checkout $(echo "$branch" | awk '{print $1}' | sed "s/.* //")
+}
+
+# Git checkout tag with fzf
+gct() {
+  if [ -n "$1" ]; then git checkout $1; return; fi
+  local tag tags
+  tags=$(git tag)
+  tag=$(echo "$tags" | fzf +m)
+  git checkout $(echo "$tag" | awk '{print $1}' | sed "s/.* //")
 }
 
 gbd() {
@@ -52,4 +59,5 @@ function gdbard {
     default_branch=$(gdb)
     git checkout $default_branch
     git branch -D $branch
+    git pull
 }
