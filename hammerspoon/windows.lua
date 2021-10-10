@@ -1,5 +1,7 @@
 require('autosizes')
 
+settingLayout = false
+
 local wm = {
   currentLayout = nil,
   maximizedWindows = {},
@@ -51,6 +53,7 @@ function bindLayoutSelector(key)
 end
 
 function setLayout(name)
+  settingLayout = true
   local layout = hs.fnutils.find(layouts, function(l)
     return l.name == name
   end)
@@ -59,6 +62,7 @@ function setLayout(name)
   end
   hideWindowsExcept(layout.apps)
   wm.currentLayout = name
+  hs.timer.doAfter(hs.window.animationDuration, function() settingLayout = false end)
 end
 
 function resetLayout()

@@ -12,6 +12,9 @@ end)
 
 -- When apps are opened/quit/hidden/unhidden, apply various rules.
 appwatcher = hs.application.watcher.new(function(appName, event, app)
+  -- dont apply automatic rules if a layout is causing windows to be manipulated.
+  if settingLayout then return end
+
   local handlers = {
     [hs.application.watcher.launched] = handleAppVisible,
     [hs.application.watcher.unhidden] = handleAppVisible,
