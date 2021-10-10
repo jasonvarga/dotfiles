@@ -131,4 +131,75 @@ function setToDefaultPosition()
   end
 end
 
+function setInferredLayout()
+  local layout = getInferredLayout()
+  if layout then
+    setLayout(layout)
+    hs.alert('Layout "' .. layout .. '"')
+  else
+    hs.alert('No inferred layout')
+  end
+end
+
+-- Guesses what the current layout should be based on the current window layout.
+function getInferredLayout()
+  -- Get the apps across all layouts
+  local managedApps = {}
+  for _,layout in pairs(layouts) do
+    for app,_ in pairs(layout.apps) do managedApps[app] = true end
+  end
+
+  -- Get the visible windows, but only onces that are managed apps
+  local visibleApps = {}
+  for _,window in pairs(hs.window.visibleWindows()) do
+    local app = window:application()
+    if managedApps[app:name()] then visibleApps[app:name()] = true end
+  end
+
+  -- Get potential layouts for the current visible apps.
+  -- There may be more than one layout with matching apps.
+  local inferrableLayouts = {}
+  for _,layout in pairs(layouts) do
+    if hasMatchingApps(visibleApps, layout.apps) then
+      inferrableLayouts[#inferrableLayouts+1] = layout
+    end
+  end
+
+  if #inferrableLayouts == 0 then return nil end
+
+  -- Check if there's a layout that matches the positions of all visible windows.
+  local inferredLayout = nil
+  for _,layout in pairs(inferrableLayouts) do
+    if isMatchingLayout(visibleApps, layout.apps) then
+      inferredLayout = layout.name
+    end
+  end
+
+  -- Use the exact layout match, or just the first with matching apps.
+  if inferredLayout then return inferredLayout end
+  return inferrableLayouts[1].name
+end
+
+-- Check if the given apps are all in the given layout.
+function hasMatchingApps(visibleApps, layoutApps)
+  if size(visibleApps) ~= size(layoutApps) then return false end
+  for app,_ in pairs(layoutApps) do
+    if not visibleApps[app] then return false end
+  end
+  return true
+end
+
+-- Check if the given apps are all in the layout defined positions.
+function isMatchingLayout(visibleApps, apps)
+  for appName,_ in pairs(visibleApps) do
+    local app = getApp(appName)
+    local window = app:mainWindow()
+    local windowCell = hs.grid.get(window)
+    local windowRect = hs.grid.getCell(windowCell, hs.screen.mainScreen())
+    local layoutRect = hs.grid.getCell(apps[appName], hs.screen.mainScreen())
+    if hs.geometry.equals(windowRect, layoutRect) then return true end
+  end
+  return false
+end
+
 return wm

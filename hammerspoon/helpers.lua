@@ -8,6 +8,15 @@ function map(f, t)
   return n;
 end
 
+-- Get the number of items in a table
+function size(table)
+  local count = 0
+  for k,v in pairs(table) do
+    count = count + 1
+  end
+  return count
+end
+
 function printi(...)
   return print(hs.inspect(...))
 end
