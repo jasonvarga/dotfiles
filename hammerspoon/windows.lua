@@ -1,13 +1,10 @@
 require('autosizes')
 
 settingLayout = false
-
-local wm = {
-  currentLayout = nil,
-  maximizedWindows = {},
-  zenWindow = nil,
-  layoutBeforeZen = nil
-}
+currentLayout = nil
+maximizedWindows = {}
+zenWindow = nil
+layoutBeforeZen = nil
 
 function moveApp(application, cell)
   local app = getOrOpenApp(application)
@@ -61,12 +58,12 @@ function setLayout(name)
     moveApp(app, cell)
   end
   hideWindowsExcept(layout.apps)
-  wm.currentLayout = name
+  currentLayout = name
   hs.timer.doAfter(hs.window.animationDuration, function() settingLayout = false end)
 end
 
 function resetLayout()
-  if wm.currentLayout then setLayout(wm.currentLayout) end
+  if currentLayout then setLayout(currentLayout) end
 end
 
 function hideWindowsExcept(allowed)
@@ -90,12 +87,12 @@ function toggleMaximized()
   local win = hs.window.focusedWindow()
   local id = win:id()
 
-  if wm.maximizedWindows[id] then
-    hs.grid.set(win, wm.maximizedWindows[id])
-    wm.maximizedWindows[id] = nil
+  if maximizedWindows[id] then
+    hs.grid.set(win, maximizedWindows[id])
+    maximizedWindows[id] = nil
   else
     local cell = hs.grid.get(win)
-    wm.maximizedWindows[id] = cell
+    maximizedWindows[id] = cell
     hs.grid.maximizeWindow(win)
   end
 end
@@ -105,17 +102,17 @@ end
 function toggleZenFocus(cell)
   local win = hs.window.focusedWindow()
 
-  if wm.zenWindow == win.id then
-    wm.zenWindow = nil
-    if wm.layoutBeforeZen then
-      setLayout(wm.layoutBeforeZen)
+  if zenWindow == win.id then
+    zenWindow = nil
+    if layoutBeforeZen then
+      setLayout(layoutBeforeZen)
       win:focus()
     end
   else
     hs.grid.set(win, cell)
     hideWindowsExcept({[win:application():name()] = true})
-    wm.layoutBeforeZen = wm.currentLayout
-    wm.zenWindow = win.id
+    layoutBeforeZen = currentLayout
+    zenWindow = win.id
   end
 end
 
@@ -201,5 +198,3 @@ function isMatchingLayout(visibleApps, apps)
   end
   return false
 end
-
-return wm
