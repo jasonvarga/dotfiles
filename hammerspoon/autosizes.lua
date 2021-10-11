@@ -1,5 +1,8 @@
 -- todo: don't apply rules when in focus or maximized modes
 
+-- https://github.com/Hammerspoon/hammerspoon/issues/2943
+hs.window.filter.ignoreAlways['Safari Web Content (Cached)'] = true
+
 -- Subscribe to windows being closed. If the app has no visible windows, hide the app.
 -- The automatic layouts rely on app hiding events, not window closing events.
 wf = hs.window.filter.new()
