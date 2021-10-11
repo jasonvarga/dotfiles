@@ -28,8 +28,7 @@ alias vapor='vendor/bin/vapor'
 alias rray='comp require spatie/laravel-ray'
 alias cr='ray -C' # clear ray
 
-alias docker='open --background -a Docker'
-alias ts='takeout start'
+alias ts='open-docker && takeout start'
 alias nginxlog='tail -f ~/.config/valet/Log/nginx-error.log'
 
 # Read DB creds from .env file and open in TablePlus
@@ -49,3 +48,13 @@ opendb () {
    open $DB_URL
 }
 
+# Open Docker and wait for it to be ready
+open-docker() {
+  if (! docker stats --no-stream &> /dev/null); then
+    echo "Waiting for Docker..."
+    open --background -a Docker
+    while (! docker stats --no-stream &> /dev/null); do
+      sleep 1
+    done
+  fi
+}
