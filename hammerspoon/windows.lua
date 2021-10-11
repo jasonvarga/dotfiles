@@ -50,18 +50,22 @@ function bindLayoutSelector(key)
 end
 
 function setLayout(name)
-  settingLayout = true
   local layout = hs.fnutils.find(layouts, function(l) return l.name == name end)
+  applyLayout(layout)
+end
+
+function applyLayout(layout)
+  settingLayout = true
   for app,cell in pairs(layout.apps) do
     moveApp(app, cell)
   end
   hideWindowsExcept(layout.apps)
-  currentLayout = name
+  currentLayout = layout
   hs.timer.doAfter(hs.window.animationDuration, function() settingLayout = false end)
 end
 
 function resetLayout()
-  if currentLayout then setLayout(currentLayout) end
+  if currentLayout then setLayout(currentLayout.name) end
 end
 
 function hideWindowsExcept(allowed)
@@ -103,7 +107,7 @@ function toggleZenFocus(cell)
   if zenWindow == win.id then
     zenWindow = nil
     if layoutBeforeZen then
-      setLayout(layoutBeforeZen)
+      applyLayout(layoutBeforeZen)
       win:focus()
     end
   else
@@ -198,7 +202,7 @@ function isMatchingLayout(visibleApps, apps)
 end
 
 function toggleLayout()
-  local layout = hs.fnutils.find(layouts, function(l) return l.name == currentLayout end)
+  local layout = hs.fnutils.find(layouts, function(l) return l.name == currentLayout.name end)
   if layout == nil then return end
   local toggle = layout.toggle
   if toggle == nil then return end
