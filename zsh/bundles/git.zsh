@@ -1,3 +1,4 @@
+alias g='git'
 alias gs='git status -s | grep -q . && echo "$(git status -s)" || echo "Clean as a whistle"'
 alias gss='git status'
 alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
