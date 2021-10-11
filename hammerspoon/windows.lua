@@ -51,9 +51,7 @@ end
 
 function setLayout(name)
   settingLayout = true
-  local layout = hs.fnutils.find(layouts, function(l)
-    return l.name == name
-  end)
+  local layout = hs.fnutils.find(layouts, function(l) return l.name == name end)
   for app,cell in pairs(layout.apps) do
     moveApp(app, cell)
   end
@@ -197,4 +195,12 @@ function isMatchingLayout(visibleApps, apps)
     if hs.geometry.equals(windowRect, layoutRect) then return true end
   end
   return false
+end
+
+function toggleLayout()
+  local layout = hs.fnutils.find(layouts, function(l) return l.name == currentLayout end)
+  if layout == nil then return end
+  local toggle = layout.toggle
+  if toggle == nil then return end
+  setLayout(toggle)
 end

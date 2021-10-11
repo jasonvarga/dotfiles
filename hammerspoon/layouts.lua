@@ -19,7 +19,8 @@ return {
     apps = {
       Safari = positions.halves.left,
       Code = positions.halves.right
-    }
+    },
+    toggle = 'Code and Browser (narrow)'
   },
   {
     name = 'Code and Browser (narrow)',
@@ -27,7 +28,8 @@ return {
     apps = {
       Safari = positions.thirds.left,
       Code = positions.twoThirds.right
-    }
+    },
+    toggle = 'Code and Browser'
   },
   {
     name = 'Code and Ray',
@@ -35,7 +37,8 @@ return {
     apps = {
       Ray = positions.sixths.left,
       Code = positions.fiveSixths.right
-    }
+    },
+    toggle = 'Code, Ray, Browser'
   },
   {
     name = 'Code, Ray, Browser',
@@ -44,6 +47,7 @@ return {
       Ray = positions.sixths.left,
       Code = '5,0 15x20',
       Safari = '20,0 10x20'
-    }
+    },
+    toggle = 'Code and Ray'
   }
 }

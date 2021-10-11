@@ -45,6 +45,7 @@ bindLayoutSelector('l')
 bindHyper('r', resetLayout)
 bindHyper('m', toggleMaximized)
 bindHyper('d', setToDefaultPosition)
+bindHyper('t', toggleLayout)
 bindHyper('f', function() toggleZenFocus(positions.center.medium) end)
 setInferredLayout()
 
