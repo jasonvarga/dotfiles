@@ -1,10 +1,6 @@
 ; Compiles to `~/.config/karabiner/karabiner.json with `goku` (or watch with `gokuw`)
 {
   :main [
-    ;; {:des "Caps lock to hyper (esc if alone)" :rules [
-    ;;   [:##caps_lock :!COleft_control nil {:alone :escape}]
-    ;; ]}
-
     ; caps lock to f19
     {:des "Caps lock to f19" :rules [
       [:##caps_lock :f19 nil {:alone :escape}]
