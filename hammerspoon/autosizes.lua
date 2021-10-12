@@ -32,7 +32,9 @@ function handleAppVisible(app, appName)
   local config = apps[appName]
   if not config then return end
   if config.position then
-    positionWindow(app:mainWindow(), config.position)
+    for _, win in pairs(app:allWindows()) do
+      positionWindow(win, config.position, false)
+    end
   end
   local rule = config.onShow
   if rule then rule() end

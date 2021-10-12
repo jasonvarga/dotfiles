@@ -39,7 +39,7 @@ return (function(movements)
     lastSeenAt = now
     lastSeenWindow = id
 
-    hs.grid.set(win, movements[sequenceNumber], screen)
+    positionWindow(win, movements[sequenceNumber], screen)
     sequenceNumber = sequenceNumber % cycleLength + 1
   end
 end)

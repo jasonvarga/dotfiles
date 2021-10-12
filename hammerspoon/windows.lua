@@ -14,8 +14,18 @@ function moveApp(application, cell)
   end
 end
 
-function positionWindow(window, cell)
+function positionWindow(window, cell, saveToLayout)
   hs.grid.set(window, cell)
+  if saveToLayout == false then
+    currentLayout.windows[window:id()] = nil
+  else
+    currentLayout.windows[window:id()] = asGridCellString(cell)
+  end
+end
+
+function asGridCellString(cell)
+  if type(cell) == 'string' then return cell end
+  return string.format("%d,%d %dx%d", cell.x, cell.y, cell.w, cell.h)
 end
 
 function getOrOpenApp(application)
@@ -56,11 +66,12 @@ end
 
 function applyLayout(layout)
   settingLayout = true
+  currentLayout = layout
+  currentLayout.windows = {}
   for app,cell in pairs(layout.apps) do
     moveApp(app, cell)
   end
   hideWindowsExcept(layout.apps)
-  currentLayout = layout
   hs.timer.doAfter(hs.window.animationDuration, function() settingLayout = false end)
 end
 
@@ -124,7 +135,7 @@ function setToDefaultPosition()
   local app = win:application()
   local config = hs.fnutils.find(apps, function(config) return config.id == app:bundleID() end)
   if config.position then
-    positionWindow(win, config.position)
+    positionWindow(win, config.position, false)
   else
     hs.alert(app:name() .. ' has no default position')
   end
@@ -207,4 +218,79 @@ function toggleLayout()
   local toggle = layout.toggle
   if toggle == nil then return end
   setLayout(toggle)
+end
+
+function bindWarp(key)
+  local chooser = hs.chooser.new(function(choice)
+    if not choice then return end
+    local cell = hs.grid.get(choice.window)
+    positionWindow(hs.window.focusedWindow(), cell)
+  end)
+
+  hyper:bind({}, key, function()
+    local windows = hs.fnutils.filter(hs.window.visibleWindows(), function(win)
+      local focusedWin = hs.window.focusedWindow()
+      return win:id() ~= focusedWin:id() and win:frame() ~= focusedWin:frame()
+    end)
+    local choices = map(function(window)
+      local app = window:application()
+      return {
+        text = app:name(),
+        subText = window:title() or '--',
+        window = window,
+        image = hs.image.imageFromAppBundle(window:application():bundleID()),
+      }
+    end, windows)
+    chooser:searchSubText(true):choices(choices):query(''):show()
+  end)
+end
+
+function hideFloatingWindows()
+  for _,window in pairs(hs.window.visibleWindows()) do
+    if currentLayout.windows[window:id()] == nil then
+      window:minimize()
+    end
+  end
+end
+
+function focusNextCellWindow()
+  local windows = getWindowsInFocusedCell()
+  if #windows == 0 then return end
+  local focusedIndex = hs.fnutils.indexOf(windows, hs.window.focusedWindow())
+  local nextWindow = windows[focusedIndex+1]
+  if nextWindow then
+    nextWindow:focus()
+  else
+    local prevWindow = windows[1]
+    prevWindow:focus()
+  end
+end
+
+function focusPreviousCellWindow()
+  local windows = getWindowsInFocusedCell()
+  if #windows == 0 then return end
+  local focusedIndex = hs.fnutils.indexOf(windows, hs.window.focusedWindow())
+  local nextWindow = windows[focusedIndex-1]
+  if nextWindow then
+    nextWindow:focus()
+  else
+    local prevWindow = windows[#windows]
+    prevWindow:focus()
+  end
+end
+
+function getWindowsInFocusedCell()
+  local window = hs.window.focusedWindow()
+  local windows = hs.window.visibleWindows()
+  windows = hs.fnutils.filter(windows, function(w) return w:frame() == window:frame() end)
+  table.sort(windows, function(a, b) return a:id() < b:id() end)
+  return windows
+end
+
+function applyNextLayout()
+  local currentLayoutIndex = hs.fnutils.indexOf(layouts, currentLayout)
+  local nextLayoutIndex = currentLayoutIndex + 1
+  local nextLayout = layouts[nextLayoutIndex]
+  if nextLayout == nil then nextLayout = layouts[1] end
+  setLayout(nextLayout.name)
 end

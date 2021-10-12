@@ -42,10 +42,15 @@ bindHyper('down', chain(getPositions(chainY, 'center')))
 
 -- Multi-window layouts
 bindLayoutSelector('l')
+hyper:bind('cmd', 'l', applyNextLayout)
 bindHyper('r', resetLayout)
+bindHyper('h', hideFloatingWindows)
 bindHyper('m', toggleMaximized)
 bindHyper('d', setToDefaultPosition)
 bindHyper('t', toggleLayout)
+bindWarp('w')
+bindHyper('n', focusNextCellWindow)
+bindHyper('p', focusPreviousCellWindow)
 bindHyper('f', function() toggleZenFocus(positions.center.medium) end)
 setInferredLayout()
 
