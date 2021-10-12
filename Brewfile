@@ -21,8 +21,6 @@ brew 'starship'
 brew 'thefuck'
 brew 'trash'
 brew 'tree'
-brew 'zsh-autosuggestions'
-brew 'zsh-syntax-highlighting'
 
 cask '1password'
 cask 'discord'
