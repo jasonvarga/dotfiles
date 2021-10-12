@@ -61,6 +61,9 @@ setInferredLayout()
 bindHyper('`', hs.toggleConsole)
 bindHyper('f1', function() hs.execute('osascript -e \'tell app "System Events" to tell appearance preferences to set dark mode to not dark mode\'') end)
 
+-- Quick entry in Things.app
+hyper:bind('cmd', '=', function() hs.eventtap.keyStroke({'cmd', 'alt', 'shift', 'ctrl'}, '=') end)
+
 --------------------------------------------------------------------------------
 -- Done!
 --------------------------------------------------------------------------------
