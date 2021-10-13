@@ -17,12 +17,6 @@ hs.alert.defaultStyle.textSize = 16
 hs.alert.defaultStyle.radius = 6
 
 ----------------------------------------------------------------------------------------------------
--- Summon
-----------------------------------------------------------------------------------------------------
-
-require('summon').via('o')
-
-----------------------------------------------------------------------------------------------------
 -- Window Management
 ----------------------------------------------------------------------------------------------------
 
@@ -55,8 +49,11 @@ bindHyper('f', function() toggleZenFocus(positions.center.medium) end)
 setInferredLayout()
 
 ----------------------------------------------------------------------------------------------------
--- Misc Keybindings
+-- Keybindings
 ----------------------------------------------------------------------------------------------------
+
+-- Summon apps using hyper+o then key defined in apps.lua
+require('summon').via('o')
 
 bindHyper('`', hs.toggleConsole)
 bindHyper('f1', function() hs.execute('osascript -e \'tell app "System Events" to tell appearance preferences to set dark mode to not dark mode\'') end)
