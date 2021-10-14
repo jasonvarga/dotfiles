@@ -44,9 +44,9 @@ return {
     name = 'Code, Ray, Browser',
     description = 'Code 50%, Browser 33%, Ray 17%',
     apps = {
-      Ray = positions.sixths.left,
-      Code = '5,0 15x20',
-      Safari = '20,0 10x20'
+      Safari = '4,0 11x20',
+      Code = '15,0 15x20',
+      Ray = '0,0 4x20'
     },
     toggle = 'Code and Ray'
   }
