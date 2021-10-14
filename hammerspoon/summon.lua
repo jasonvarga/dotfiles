@@ -6,7 +6,12 @@ summon.via = function(modalKey)
   hs.fnutils.map(apps, function(app)
     if app.key then
       modal:bind(modalKey, app.key, function()
-        hs.application.launchOrFocusByBundleID(app.id)
+        local currentApp = hs.window.focusedWindow():application()
+        if (currentApp:bundleID() == app.id) then
+          currentApp:hide()
+        else
+          hs.application.launchOrFocusByBundleID(app.id)
+        end
         modal:exit()
       end)
     end
