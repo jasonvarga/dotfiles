@@ -8,9 +8,9 @@ return {
   },
   {
     name = 'Code',
-    description = 'Focused in the center',
+    description = 'Maximized',
     apps = {
-      Code = positions.center.medium,
+      Code = positions.full,
     }
   },
   {
