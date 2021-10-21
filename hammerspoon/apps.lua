@@ -94,4 +94,8 @@ return {
     Messages = {
         position = positions.center.mini,
     },
+    Bear = {
+        id = 'net.shinyfrog.bear',
+        key = 'n' -- notes
+    }
 }
