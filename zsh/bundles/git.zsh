@@ -14,6 +14,7 @@ alias glt='git describe --tags --abbrev=0' # git latest tag
 alias gcslt='git log $(glt)..HEAD --oneline --no-decorate' # git commits since latest tag
 alias gt='gittower .'
 alias gdb='git remote show origin | grep "HEAD branch" | cut -d " " -f5'
+alias gpr='gh pr checkout'
 alias wip="git add . && git commit -m 'wip'"
 alias wipa="git add . && git commit --amend -m 'wip'"
 alias cdr='cd $(git rev-parse --show-toplevel)'
@@ -60,8 +61,4 @@ function gdbard {
     git checkout $default_branch
     git branch -D $branch
     git pull
-}
-
-gpr() {
-  gh pr checkout $1 -b pull/$1
 }
