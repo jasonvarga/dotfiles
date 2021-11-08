@@ -92,6 +92,8 @@ return {
         key = 'l' -- list
     },
     Messages = {
+        id = 'com.apple.MobileSMS',
+        key = ',', -- next to m
         position = positions.center.mini,
     },
     Bear = {
