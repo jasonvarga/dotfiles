@@ -5,5 +5,5 @@ zsh-users/zsh-syntax-highlighting
 jessarcher/zsh-artisan
 pixelfear/zsh-please
 molovo/tipz
-rupa/z
+agkozak/zsh-z
 ~/.dotfiles/zsh/bundles
