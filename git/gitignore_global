@@ -8,3 +8,4 @@ Thumbs.db
 .idea/
 .vscode
 .vagrant/
+.antlers.json
