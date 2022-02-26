@@ -8,6 +8,7 @@ return {
     Code = {
         id = 'com.microsoft.VSCode',
         key = 'c',
+        focus = positions.center.large,
         onShow = function()
             if isAppVisible('Ray') and isAppVisible('Safari') then setLayout('Code, Ray, Browser')
             elseif isAppVisible('Safari') then setLayout('Code and Browser') end
@@ -81,7 +82,8 @@ return {
     },
     Tinkerwell = {
         id = 'de.beyondco.tinkerwell',
-        key = 't'
+        key = 't',
+        position = positions.center.large
     },
     TablePlus = {
         id = 'com.tinyapp.TablePlus',

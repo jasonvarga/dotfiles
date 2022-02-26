@@ -115,6 +115,12 @@ end
 function toggleZenFocus(cell)
   local win = hs.window.focusedWindow()
 
+  -- if the window has a default size in apps.lua, then use that instead of cell
+  local app = win:application()
+  local config = hs.fnutils.find(apps, function(config) return config.id == app:bundleID() end)
+  if config and config.focus then cell = config.focus end
+  if config and config.position then cell = config.position end
+
   if zenWindow == win.id then
     zenWindow = nil
     if layoutBeforeZen then
