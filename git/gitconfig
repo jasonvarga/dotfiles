@@ -15,3 +15,5 @@
 	patternType = perl
 [pull]
 	ff = only
+[advice]
+    detachedHead = false
