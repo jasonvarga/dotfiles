@@ -1,7 +1,7 @@
 alias phpunit='vendor/bin/phpunit'
 alias p='phpunit'
 alias pf='p --filter'
-alias pc='p --cache-result --order-by=depends,defects --stop-on-defect'
+alias ps='p --cache-result --order-by=depends,defects --stop-on-defect --stop-on-error --stop-on-failure'
 
 alias comp='composer'
 alias comp1="composer self-update --1 && composer --version"

@@ -9,6 +9,7 @@ alias s2='cd ~/code/statamic/two'
 alias s3='cd ~/code/statamic/three'
 alias plzuser="cp $DOTFILES/statamic/jason@statamic.com.yaml users/jason@statamic.com.yaml && echo 'User created.'"
 alias plzpro="sed -i \"\" \"s/'pro'\ =>\ false/'pro'\ =>\ true/\" config/statamic/editions.php && echo 'Pro enabled.'"
+alias changelog='gcslt | pbcopy'
 
 function linkcp {
     rm -f public/vendor/statamic/cp
