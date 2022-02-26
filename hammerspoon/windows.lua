@@ -137,7 +137,7 @@ function setToDefaultPosition()
   if config.position then
     positionWindow(win, config.position, false)
   else
-    hs.alert(app:name() .. ' has no default position')
+    openPositionSelector()
   end
 end
 
@@ -293,4 +293,24 @@ function applyNextLayout()
   local nextLayout = layouts[nextLayoutIndex]
   if nextLayout == nil then nextLayout = layouts[1] end
   setLayout(nextLayout.name)
+end
+
+function openPositionSelector()
+    local chooser = hs.chooser.new(function(choice)
+        positionWindow(hs.window.frontmostWindow(), choice.position)
+    end)
+
+    chooser:choices({
+        { text = "L", position = positions.center.large },
+        { text = "M", position = positions.center.medium },
+        { text = "S", position = positions.center.small },
+        { text = "XS", position = positions.center.tiny },
+        { text = "XXS", position = positions.center.mini },
+    }):query(''):show()
+end
+
+function bindPositionSelector(key)
+    hyper:bind({}, key, function()
+        openPositionSelector()
+    end)
 end

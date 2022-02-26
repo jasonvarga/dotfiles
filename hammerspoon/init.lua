@@ -36,6 +36,7 @@ bindHyper('down', chain(getPositions(chainY, 'center')))
 
 -- Multi-window layouts
 bindLayoutSelector('l')
+bindPositionSelector('return')
 hyper:bind('cmd', 'l', applyNextLayout)
 bindHyper('r', resetLayout)
 bindHyper('h', hideFloatingWindows)
