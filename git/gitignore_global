@@ -9,3 +9,4 @@ Thumbs.db
 .vscode
 .vagrant/
 .antlers.json
+antlers-language-server
