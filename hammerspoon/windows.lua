@@ -128,8 +128,10 @@ function toggleZenFocus(cell)
       win:focus()
     end
   else
-    hs.grid.set(win, cell)
     hideWindowsExcept({[win:application():name()] = true})
+    for _,window in pairs(win:application():visibleWindows()) do
+      hs.grid.set(window, cell)
+    end
     layoutBeforeZen = currentLayout
     zenWindow = win.id
   end
