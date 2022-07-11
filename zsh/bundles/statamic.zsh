@@ -18,13 +18,15 @@ function linkcp {
 }
 
 function crcms() {
-    branch=$(cd ~/code/statamic/three/cms && git rev-parse --abbrev-ref HEAD)
+    tag=$(cms && glt)
+    tag=${tag#v}
+    branch=$(cms && git rev-parse --abbrev-ref HEAD)
     if [[ $branch =~ ^[0-9]+\.[0-9]+$ ]]; then
         constraint="$branch.x-dev"
     else
         constraint="dev-$branch"
     fi
-    command="composer require \"statamic/cms $constraint\""
+    command="composer require \"statamic/cms $constraint as $tag\" -w $@"
     echo $command
     eval $command
 }
