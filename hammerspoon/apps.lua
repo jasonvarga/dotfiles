@@ -24,6 +24,10 @@ return {
         key = 'm', -- music
         position = positions.center.tiny,
     },
+    Discord = {
+        id = 'com.hnc.Discord',
+        position = positions.center.small,
+    },
     iTerm = {
         id = 'com.googlecode.iterm2',
         key = 'i',
@@ -32,7 +36,7 @@ return {
     Tower = {
         id = 'com.fournova.Tower3',
         key = 'g', -- git
-        position = positions.center.large,
+        position = positions.center.medium,
     },
     Ray = {
         id = 'be.spatie.ray',
@@ -65,8 +69,12 @@ return {
         position = positions.center.mini,
         focus = positions.center.mini,
     },
-    Bear = {
-        id = 'net.shinyfrog.bear',
+    Obsidian = {
+        id = 'md.obsidian',
         key = 'n' -- notes
-    }
+    },
+    ['1Password'] = {
+        id = 'com.1password.1password',
+        key = '1'
+    },
 }
