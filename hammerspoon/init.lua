@@ -22,7 +22,7 @@ hs.alert.defaultStyle.radius = 6
 
 hs.window.animationDuration = 0.2
 hs.grid.setGrid('30x20')
-hs.grid.setMargins('15x15') -- id like 30x30, but https://github.com/Hammerspoon/hammerspoon/issues/2955
+hs.grid.setMargins('30x30')
 
 -- Grid Movements
 local chain = require('chain')
@@ -37,17 +37,25 @@ bindHyper('down', chain(getPositions(chainY, 'center')))
 -- Multi-window layouts
 bindLayoutSelector('l')
 bindPositionSelector('return')
-hyper:bind('cmd', 'l', applyNextLayout)
 bindHyper('r', resetLayout)
 bindHyper('h', hideFloatingWindows)
+bindHyper('s', function ()
+    saveLayoutSnapshot()
+    hs.alert.show('Layout snapshotted')
+end)
+bindHyper('delete', function ()
+    removeWindowFromLayout(hs.window.focusedWindow())
+    hs.alert.show("Window removed from layout")
+end)
 bindHyper('m', toggleMaximized)
 bindHyper('d', setToDefaultPosition)
 bindHyper('t', toggleLayout)
+bindHyper('c', cycleLayouts)
 bindWarp('w')
 bindHyper('n', focusNextCellWindow)
 bindHyper('p', focusPreviousCellWindow)
-bindHyper('f', function() toggleZenFocus(positions.center.medium) end)
-setInferredLayout()
+bindHyper('f', toggleFocusMode)
+
 
 ----------------------------------------------------------------------------------------------------
 -- Keybindings

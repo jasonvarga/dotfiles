@@ -1,53 +1,25 @@
 return {
   {
-    name = 'Browser',
-    description = 'Focused in the center',
-    apps = {
-      Safari = positions.center.medium,
-    }
-  },
-  {
-    name = 'Code',
-    description = 'Maximized',
-    apps = {
-      Code = positions.full,
-    }
-  },
-  {
     name = 'Code and Browser',
-    description = 'Code 50%, Browser 50%',
     apps = {
-      Safari = positions.halves.left,
-      Code = positions.halves.right
+      Safari = { positions.halves.left,  '0,0 12x20',  positions.thirds.left,     '0,0 6x20' },
+      Code =   { positions.halves.right, '12,0 18x20', positions.twoThirds.right, '6,0 24x20' }
     },
-    toggle = 'Code and Browser (narrow)'
-  },
-  {
-    name = 'Code and Browser (narrow)',
-    description = 'Code 66%, Browser 33%',
-    apps = {
-      Safari = positions.thirds.left,
-      Code = positions.twoThirds.right
-    },
-    toggle = 'Code and Browser'
   },
   {
     name = 'Code and Ray',
-    description = 'Code 83%, Ray 17%',
     apps = {
-      Ray = positions.sixths.left,
-      Code = positions.fiveSixths.right
-    },
-    toggle = 'Code, Ray, Browser'
+      Ray =    { positions.sixths.left, positions.thirds.left },
+      Safari = { positions.fiveSixths.right, positions.twoThirds.right },
+      Code =   { positions.fiveSixths.right, positions.twoThirds.right },
+    }
   },
   {
     name = 'Code, Ray, Browser',
-    description = 'Code 50%, Browser 33%, Ray 17%',
     apps = {
-      Safari = '4,0 11x20',
-      Code = '15,0 15x20',
-      Ray = '0,0 4x20'
-    },
-    toggle = 'Code and Ray'
+      Safari = { '4,0 11x20',  '0,0 10x8' },
+      Code =   { '15,0 15x20', positions.twoThirds.right },
+      Ray =    { '0,0 4x20',   '0,8 10x12' }
+    }
   }
 }
