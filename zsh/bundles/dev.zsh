@@ -18,12 +18,12 @@ compv() {
   fi
 }
 
-alias mix='npm run dev'
-alias mw='npm run watch'
-alias imix='npm install && mix'
-alias cmix='npm ci && mix'
-alias imw='npm install && mw'
-alias cmw='npm ci && mw'
+alias nrd='npm run dev'
+alias nrw='npm run watch'
+alias inrd='npm install && nrd'
+alias cnrd='npm ci && nrd'
+alias inrw='npm install && nrw'
+alias cnrw='npm ci && nrw'
 
 alias b='valet open' # browse
 alias vapor='vendor/bin/vapor'
