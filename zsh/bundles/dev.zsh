@@ -1,3 +1,6 @@
+alias php='valet php'
+alias composer='valet composer'
+
 alias phpunit='vendor/bin/phpunit'
 alias p='phpunit'
 alias pf='p --filter'
