@@ -2,6 +2,12 @@
 -- Setup
 ----------------------------------------------------------------------------------------------------
 
+hs.loadSpoon('ReloadConfiguration'):start()
+local notification = hs.notify.new({title = 'Hammerspoon', informativeText = 'Config loading...'}):send()
+
+hs.alert.defaultStyle.textSize = 16
+hs.alert.defaultStyle.radius = 6
+
 require('helpers')
 require('modals')
 require('windows')
@@ -9,12 +15,6 @@ positions = require('positions')
 layouts = require('layouts')
 apps = require('apps')
 hyper = require('hyper'):setHyperKey('F19')
-
-hs.loadSpoon('ReloadConfiguration'):start()
-local notification = hs.notify.new({title = 'Hammerspoon', informativeText = 'Config loading...'}):send()
-
-hs.alert.defaultStyle.textSize = 16
-hs.alert.defaultStyle.radius = 6
 
 ----------------------------------------------------------------------------------------------------
 -- Window Management
