@@ -156,6 +156,10 @@ function addWindowToLayoutCell(win)
     local app = win:application()
     local windows = app:allWindows()
 
+    windows = hs.fnutils.filter(windows, function(w)
+        return w:isStandard()
+    end)
+
     if #windows < 2 then return end
 
     local prevTopWin = windows[2]
