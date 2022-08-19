@@ -20,7 +20,7 @@ hyper = require('hyper'):setHyperKey('F19')
 -- Window Management
 ----------------------------------------------------------------------------------------------------
 
-hs.window.animationDuration = 0.2
+hs.window.animationDuration = 0
 hs.grid.setGrid('30x20')
 hs.grid.setMargins('30x30')
 
