@@ -17,9 +17,9 @@ return {
   {
     name = 'Code, Ray, Browser',
     apps = {
-      Safari = { '4,0 11x20',  '0,0 10x8' },
-      Code =   { '15,0 15x20', positions.twoThirds.right },
-      Ray =    { '0,0 4x20',   '0,8 10x12' }
+      Safari = { '4,0 11x20',  '0,0 10x8',                '0,0 10x10',               '0,0 10x12' },
+      Code =   { '15,0 15x20', positions.twoThirds.right, positions.twoThirds.right, positions.twoThirds.right },
+      Ray =    { '0,0 4x20',   '0,8 10x12',               '0,10 10x10',              '0,12 10x8' }
     }
   }
 }
