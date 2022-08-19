@@ -8,6 +8,7 @@ require('windows.regular')
 require('windows.focus')
 require('windows.common')
 require('windows.subscriptions')
+require('windows.resizer')
 
 function setWindowMode(mode)
     if (mode == currentMode) then

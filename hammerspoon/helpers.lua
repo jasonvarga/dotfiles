@@ -17,6 +17,17 @@ function size(table)
   return count
 end
 
+function tableMapWithKeys(t, fn)
+  n = {}
+
+  for _,v in pairs(t) do
+    local keyPair = fn(v)
+    n[keyPair[1]] = keyPair[2]
+  end
+
+  return n;
+end
+
 function printi(...)
   return print(hs.inspect(...))
 end
