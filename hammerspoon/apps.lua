@@ -13,6 +13,9 @@ return {
         id = 'com.apple.Safari',
         key = 'b', -- browser
     },
+    Chrome = {
+        id = 'com.google.Chrome',
+    },
     Slack = {
         id = 'com.tinyspeck.slackmacgap',
         key = 's',
