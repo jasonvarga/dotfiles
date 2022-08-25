@@ -44,7 +44,8 @@ return {
     },
     Mimestream = {
         id = 'com.mimestream.Mimestream',
-        key = 'e' -- email
+        key = 'e', -- email
+        position = positions.center.medium
     },
     Finder = {
         id = 'com.apple.finder',
