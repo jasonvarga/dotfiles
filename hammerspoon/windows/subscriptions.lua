@@ -29,7 +29,6 @@ end):start()
 function handleAppVisible(app, appName)
     local config = apps[appName]
     if not config then return end
-    if not config.position then return end
     local windows = app:visibleWindows()
 
     -- Don't move windows if there are more than one. It's awkward.
@@ -40,7 +39,17 @@ function handleAppVisible(app, appName)
     for _, win in pairs(windows) do
         -- Position the window if it's not already in the layout.
         if not currentLayout.windows[win:id()] then
-            positionWindowUsingGrid(win, config.position)
+            local position = nil
+
+            -- If the app should be in the layout, place it there.
+            if currentLayout.preset.apps[appName] then
+                local cell = currentLayout.preset.apps[appName].cell
+                position = currentLayout.preset.cells[cell][currentLayoutConfiguration]
+            elseif config.position then
+                position = config.position
+            end
+
+            if position then positionWindowUsingGrid(win, position) end
         end
     end
 end
