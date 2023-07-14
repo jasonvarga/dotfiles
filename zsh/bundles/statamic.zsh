@@ -13,7 +13,10 @@ alias plzpro="sed -i \"\" \"s/'pro'\ =>\ false/'pro'\ =>\ true/\" config/statami
 alias changelog='gcslt && gcslt | pbcopy'
 
 function linkcp {
-    rm -f public/vendor/statamic/cp
+    if [ -d "public/vendor/statamic/cp" ]; then
+        rm -f public/vendor/statamic/cp
+    fi
+    mkdir -p public/vendor/statamic
     ln -s /Users/jason/Code/statamic/three/cms/resources/dist public/vendor/statamic/cp
 }
 
