@@ -23,6 +23,8 @@ function crcms() {
     branch=$(cms && git rev-parse --abbrev-ref HEAD)
     if [[ $branch =~ ^[0-9]+\.[0-9]+$ ]]; then
         constraint="$branch.x-dev"
+    elif [[ $branch =~ ^[0-9]+\.x+$ ]]; then
+        constraint="$branch-dev"
     else
         constraint="dev-$branch"
     fi
