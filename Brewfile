@@ -3,6 +3,7 @@ tap 'epk/epk'
 tap 'nicoverbruggen/homebrew-cask'
 tap 'koekeishiya/formulae'             # yabai
 tap 'yqrashawn/goku'                   # goku
+tap 'shivammathur/php'                 # older php
 
 brew 'antibody'
 brew 'composer'
@@ -15,8 +16,10 @@ brew 'mas'
 brew 'nginx'
 brew 'node'
 brew 'php'
-brew 'php@7.3'
-brew 'php@7.4'
+brew 'php'
+brew 'shivammathur/php/php@8.1'
+brew 'shivammathur/php/php@8.0'
+brew 'shivammathur/php/php@7.4'
 brew 'starship'
 brew 'thefuck'
 brew 'trash'
