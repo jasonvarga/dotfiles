@@ -1,3 +1,5 @@
+# Run `antibody update` to update.
+
 ohmyzsh/oh-my-zsh
 marlonrichert/zsh-autocomplete
 zsh-users/zsh-autosuggestions
