@@ -20,9 +20,14 @@ alias comp2="composer self-update --2 && composer --version"
 
 compv() {
   if [[ $1 == *"/"* ]]; then
+    # If a full vendor/package is provided, output the version.
     composer show $1 | grep 'versions' | grep -o -E '\*\ .+' | cut -d' ' -f2 | cut -d',' -f1;
-  else
+  elif [[ -n $1 ]]; then
+    # If an argument is provided, do a grep search.
     composer info | grep $1
+  else
+    # Otherwise show all directly installed packages.
+    composer show -D
   fi
 }
 
