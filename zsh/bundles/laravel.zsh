@@ -9,14 +9,11 @@ alias queue='art queue:listen'
 alias tink='tinker'
 alias sail='vendor/bin/sail'
 
+# Open the current directory in Tinkerwell
 function tinker {
-	if [ -e artisan ]; then
-		php artisan tinker
-	elif [ -e please ]; then
-		php please tinker
-	else
-		psysh
-	fi
+    # Get the base64 encoded current working directory
+    dir=$(echo -n $PWD | base64)
+    open "tinkerwell://?cwd=$dir"
 }
 
 function laravel-new-sail {
