@@ -11,6 +11,7 @@ export PATH=/opt/homebrew/sbin:${PATH}
 export PATH=${PATH}:/usr/local/bin
 export PATH=${PATH}:/usr/local/sbin
 export PATH=~/.composer/vendor/bin:${PATH}
+export PATH=~/.config/phpmon/bin:${PATH}
 
 export GOKU_EDN_CONFIG_FILE=$DOTFILES/karabiner/karabiner.edn
 
