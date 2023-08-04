@@ -8,6 +8,8 @@ local notification = hs.notify.new({title = 'Hammerspoon', informativeText = 'Co
 hs.alert.defaultStyle.textSize = 16
 hs.alert.defaultStyle.radius = 6
 
+windowMargin = 50
+
 require('helpers')
 require('modals')
 require('windows')
@@ -22,7 +24,7 @@ hyper = require('hyper'):setHyperKey('F19')
 
 hs.window.animationDuration = 0
 hs.grid.setGrid('30x20')
-hs.grid.setMargins('30x30')
+hs.grid.setMargins(string.format('%sx%s', windowMargin, windowMargin))
 
 -- Grid Movements
 local chain = require('chain')
