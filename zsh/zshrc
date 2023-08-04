@@ -10,7 +10,7 @@ export PATH=/opt/homebrew/bin:${PATH}
 export PATH=/opt/homebrew/sbin:${PATH}
 export PATH=${PATH}:/usr/local/bin
 export PATH=${PATH}:/usr/local/sbin
-export PATH=${PATH}:~/.composer/vendor/bin
+export PATH=~/.composer/vendor/bin:${PATH}
 
 export GOKU_EDN_CONFIG_FILE=$DOTFILES/karabiner/karabiner.edn
 
