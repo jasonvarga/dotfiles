@@ -12,7 +12,7 @@ alias plzuser="cp $DOTFILES/statamic/jason@statamic.com.yaml users/jason@statami
 alias plzpro="sed -i \"\" \"s/'pro'\ =>\ false/'pro'\ =>\ true/\" config/statamic/editions.php && echo 'Pro enabled.'"
 alias changelog='gcslt && gcslt | pbcopy'
 
-function linkcp {
+function plzlink {
     if [ -d "public/vendor/statamic/cp" ]; then
         rm -f public/vendor/statamic/cp
     fi
