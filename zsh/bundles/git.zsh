@@ -1,6 +1,7 @@
 alias gs='git status -s | grep -q . && echo "$(git status -s)" || echo "Clean as a whistle"'
 alias gss='git status'
 alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+alias glf="gl --no-merges --first-parent;" # git log flat
 alias gc='git commit -m'
 alias gco='git checkout'
 alias gcod='gco $(gdb)'
@@ -51,7 +52,7 @@ gcot() {
 # Git checkout recent with fzf
 gcor() {
     local branches branch
-    branches=$(git reflog show --pretty=format:'%gs ~ %gd' --date=relative | grep checkout | grep -oE '[^ ]+ ~ .*' | awk -F~ '!seen[$1]++' | head -n 11 | tail -n 10 | awk -F' ~ HEAD@{' '{printf("%s: %s\n", substr($2, 1, length($2)-1), $1)}')
+    branches=$(git reflog show --pretty=format:'%gs ~ %gd' --date=relative | grep checkout | grep -oE '[^ ]+ ~ .*' | awk -F~ '!seen[$1]++' | head -n 20 | awk -F' ~ HEAD@{' '{printf("%s: %s\n", substr($2, 1, length($2)-1), $1)}')
     selection=$(echo "$branches" | fzf +m)
     branch=$(echo "$selection" | awk '{print $NF}')
     git checkout $branch
