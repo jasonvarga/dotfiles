@@ -30,3 +30,10 @@ zubl() {
   fi
   subl .
 }
+
+# Make directory and cd into it
+mkcdir ()
+{
+    mkdir -p -- "$1" &&
+       cd -P -- "$1"
+}
