@@ -1,0 +1,5 @@
+# this file isn't a thing.
+# but if there's a ray to bulk install global npm dependencies, this is where it would be.
+# like a Brewfile for npm.
+
+@githubnext/github-copilot-cli
