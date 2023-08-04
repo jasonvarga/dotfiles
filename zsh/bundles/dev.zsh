@@ -1,8 +1,16 @@
 alias php='valet php'
 alias composer='valet composer'
 
-alias phpunit='vendor/bin/phpunit'
-alias p='phpunit'
+alias phpunit='php vendor/bin/phpunit'
+
+p() {
+    if [ -f "vendor/bin/pest" ]; then
+        vendor/bin/pest "$@"
+    else
+        phpunit "$@"
+    fi
+}
+
 alias pf='p --filter'
 alias ps='p --cache-result --order-by=depends,defects --stop-on-defect --stop-on-error --stop-on-failure'
 
