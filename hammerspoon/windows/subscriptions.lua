@@ -16,6 +16,19 @@ hs.window.filter.new():subscribe(hs.window.filter.windowCreated, function(win)
     end
 end)
 
+-- If a window is only dragged a little bit, don't move it.
+-- This is to avoid accidentally moving windows when trying to click on them.
+hs.window.filter.new():subscribe(hs.window.filter.windowMoved, function(win)
+    local existing = currentLayout.windows[win:id()]
+    if not existing then return end
+    local current = win:frame()
+
+    local tolerance = 50
+    if math.abs(current.x - existing.x) < tolerance and math.abs(current.y - existing.y) < tolerance then
+        win:setFrame(existing)
+    end
+end)
+
 -- Automatically move windows to a configured position when showing them.
 -- (Only works when assigning to a variablem)
 appwatcher = hs.application.watcher.new(function(appName, event, app)
