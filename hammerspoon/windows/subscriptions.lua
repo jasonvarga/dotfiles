@@ -23,6 +23,10 @@ hs.window.filter.new():subscribe(hs.window.filter.windowMoved, function(win)
     if not existing then return end
     local current = win:frame()
 
+    -- Don't adjust if it didn't move. This could happen if you resize the window.
+    -- A resize still triggers a windowMoved event.
+    if current.x == existing.x and current.y == existing.y then return end
+
     local tolerance = 50
     if math.abs(current.x - existing.x) < tolerance and math.abs(current.y - existing.y) < tolerance then
         win:setFrame(existing)
