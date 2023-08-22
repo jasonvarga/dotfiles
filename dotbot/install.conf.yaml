@@ -21,6 +21,7 @@
     ~/.mackup.cfg: mackup.cfg
     ~/.ssh/config: ssh/config
     ~/.hammerspoon: hammerspoon
+    ~/.vimrc: vim/vimrc
 
 - shell:
   - description: Hushing login
