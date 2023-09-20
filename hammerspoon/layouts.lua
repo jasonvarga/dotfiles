@@ -2,8 +2,8 @@ return {
   {
     name = 'Split',
     cells = {
-      { positions.halves.left,  '0,0 12x20',  positions.thirds.left,     '0,0 6x20' },
-      { positions.halves.right, '12,0 18x20', positions.twoThirds.right, '6,0 24x20' }
+      { '0,0 12x20',  positions.thirds.left,     '0,0 6x20',  positions.halves.left },
+      { '12,0 18x20', positions.twoThirds.right, '6,0 24x20', positions.halves.right }
     },
     apps = {
         Safari = { cell = 1, open = true },
