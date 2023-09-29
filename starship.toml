@@ -16,5 +16,8 @@ disabled = true
 [python]
 disabled = true
 
+[docker_context]
+disabled = true
+
 [git_status]
 format = '([\[$conflicted$deleted$renamed$modified$staged$untracked$ahead_behind\]]($style) )'
