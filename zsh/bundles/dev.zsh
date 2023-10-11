@@ -1,5 +1,8 @@
 alias php='valet php'
-alias composer='valet composer'
+
+function composer() {
+    valet composer "$@"
+}
 
 alias phpunit='php vendor/bin/phpunit'
 
