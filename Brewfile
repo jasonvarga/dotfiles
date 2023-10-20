@@ -6,6 +6,7 @@ tap 'yqrashawn/goku'                   # goku
 tap 'shivammathur/php'                 # older php
 
 brew 'antibody'
+brew 'bat'
 brew 'composer'
 brew 'dnsmasq'
 brew 'fzf'
