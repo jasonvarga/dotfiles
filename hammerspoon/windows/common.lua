@@ -134,6 +134,10 @@ function bindWarp(key)
     local chooser = hs.chooser.new(function(choice)
         if not choice then return end
         positionWindowUsingRect(hs.window.focusedWindow(), choice.window:frame())
+        -- If the chosen window is in the layout, add the focused window to the layout too.
+        if currentLayout.windows[choice.window:id()] then
+            currentLayout.windows[hs.window.focusedWindow():id()] = choice.window:frame()
+        end
     end)
 
     hyper:bind({}, key, function()
