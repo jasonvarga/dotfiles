@@ -8,11 +8,8 @@ local notification = hs.notify.new({title = 'Hammerspoon', informativeText = 'Co
 hs.alert.defaultStyle.textSize = 16
 hs.alert.defaultStyle.radius = 6
 
-windowMargin = 50
-
 require('helpers')
 require('modals')
-require('windows')
 positions = require('positions')
 layouts = require('layouts')
 apps = require('apps')
@@ -22,9 +19,15 @@ hyper = require('hyper'):setHyperKey('F19')
 -- Window Management
 ----------------------------------------------------------------------------------------------------
 
+if hs.screen.allScreens()[1]:name() == 'Built-in Retina Display' then onLaptop = true end
+windowMargin = 20
+if onLaptop then windowMargin = 0 end
+
 hs.window.animationDuration = 0
 hs.grid.setGrid('30x20')
 hs.grid.setMargins(string.format('%sx%s', windowMargin, windowMargin))
+
+require('windows')
 
 -- Grid Movements
 local chain = require('chain')
