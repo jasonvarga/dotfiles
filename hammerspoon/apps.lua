@@ -83,9 +83,10 @@ return {
         position = positions.center.mini,
         focus = positions.center.mini,
     },
-    Obsidian = {
-        id = 'md.obsidian',
-        key = 'n' -- notes
+    Notes = {
+        id = 'com.apple.Notes',
+        key = 'n',
+        position = positions.center.mini,
     },
     ['1Password'] = {
         id = 'com.1password.1password',
