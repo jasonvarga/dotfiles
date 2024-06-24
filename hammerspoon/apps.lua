@@ -25,7 +25,7 @@ return {
     Spotify = {
         id = 'com.spotify.client',
         key = 'm', -- music
-        position = positions.center.tiny,
+        position = positions.center.medium,
     },
     Discord = {
         id = 'com.hnc.Discord',
