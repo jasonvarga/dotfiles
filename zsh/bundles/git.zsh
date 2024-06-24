@@ -9,6 +9,8 @@ alias gap="git add -p"
 alias gpl='git pull'
 alias gplr='git pull --rebase'
 alias gpsh='git push'
+alias gst='git stash -u'
+alias gpop='git stash pop'
 alias gnb='git checkout -b'
 alias nah='git reset --hard; git clean -df;'
 alias glt='git describe --tags --abbrev=0' # git latest tag
