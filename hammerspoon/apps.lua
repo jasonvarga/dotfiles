@@ -9,6 +9,11 @@ return {
         key = 'c',
         focus = positions.center.large,
     },
+    PhpStorm = {
+        id = 'com.jetbrains.PhpStorm',
+        key = 'p',
+        position = positions.center.large,
+    },
     Safari = {
         id = 'com.apple.Safari',
         key = 'b', -- browser
