@@ -46,5 +46,29 @@ return {
         Tinkerwell = { cell = 3 },
         TablePlus = { cell = 3 },
     }
+  },
+  {
+    name = 'Screenshare',
+    cells = {
+        { positions.center.large }
+    },
+    apps = {
+        Arc = { cell = 1 },
+        Code = { cell = 1 },
+        PhpStorm = { cell = 1 },
+    },
+  },
+  {
+    name = 'Screenshare Split',
+    cells = {
+        { '10,1 16x18' },
+        { '4,1 6x18' },
+    },
+    apps = {
+        Arc = { cell = 1 },
+        Code = { cell = 1 },
+        PhpStorm = { cell = 1 },
+        Ray = { cell = 2 },
+    }
   }
 }
