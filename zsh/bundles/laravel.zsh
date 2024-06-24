@@ -1,4 +1,7 @@
-alias artisan='php artisan'
+function artisan() {
+    php artisan "$@"
+}
+
 alias art='artisan'
 alias acc='art cache:clear'
 alias avp='art vendor:publish'
