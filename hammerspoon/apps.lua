@@ -45,8 +45,8 @@ return {
         id = 'be.spatie.ray',
         key = 'r',
     },
-    Mimestream = {
-        id = 'com.mimestream.Mimestream',
+    Mail = {
+        id = 'com.apple.mail',
         key = 'e', -- email
         position = positions.center.medium
     },
