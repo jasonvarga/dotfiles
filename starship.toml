@@ -1,3 +1,7 @@
+[character]
+success_symbol = '[→](bold green)'
+error_symbol = '[→](bold red)'
+
 [directory]
 truncation_length = 5
 
@@ -17,6 +21,9 @@ disabled = true
 disabled = true
 
 [docker_context]
+disabled = true
+
+[vagrant]
 disabled = true
 
 [git_status]
