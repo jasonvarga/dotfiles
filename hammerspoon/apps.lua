@@ -14,9 +14,13 @@ return {
         key = 'p',
         position = positions.center.large,
     },
+    Arc = {
+        id = 'company.thebrowser.Browser',
+        key = 'b', -- browser
+        position = positions.center.large,
+    },
     Safari = {
         id = 'com.apple.Safari',
-        key = 'b', -- browser
     },
     Chrome = {
         id = 'com.google.Chrome',
