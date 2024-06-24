@@ -61,7 +61,8 @@ return {
     },
     TablePlus = {
         id = 'com.tinyapp.TablePlus',
-        key = 'd' -- database
+        key = 'd', -- database
+        position = positions.center.large
     },
     Things = {
         id = 'com.culturedcode.ThingsMac',
