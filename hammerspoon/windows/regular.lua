@@ -104,11 +104,16 @@ function toggleLayout()
     saveLayoutSnapshot()
 end
 
-function cycleLayouts()
-    local nextLayoutIndex = getNextLayoutIndex()
-    local nextLayout = layouts[nextLayoutIndex]
-    applyPresetLayout(nextLayout)
-    lastCycledLayoutIndex = nextLayoutIndex
+function centerWindow()
+    local win = hs.window.focusedWindow()
+    if win then
+        local screen = win:screen()
+        local frame = screen:frame()
+        local winFrame = win:frame()
+        winFrame.x = frame.x + (frame.w - winFrame.w) / 2
+        winFrame.y = frame.y + (frame.h - winFrame.h) / 2
+        win:setFrame(winFrame)
+    end
 end
 
 function getNextLayoutIndex()
