@@ -9,6 +9,7 @@ alias dot='cd ~/.dotfiles'
 alias iterm='open . -a iterm'
 alias bs='brew services'
 alias sbs='sudo brew services'
+alias pstorm='open -a "PhpStorm"'
 eval $(thefuck --alias)
 
 # Copy pwd to clipboard without trailing newline
