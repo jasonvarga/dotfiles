@@ -47,7 +47,7 @@ alias cnrw='npm ci && nrw'
 alias b='valet open' # browse
 alias vapor='vendor/bin/vapor'
 
-alias rray='comp require spatie/laravel-ray'
+alias rray='comp require spatie/laravel-ray --dev'
 alias cr='ray -C' # clear ray
 
 alias ts='open-docker && takeout start'
