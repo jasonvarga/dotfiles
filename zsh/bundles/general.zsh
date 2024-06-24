@@ -38,7 +38,6 @@ mkcdir ()
        cd -P -- "$1"
 }
 
-
 internet() {
     disconnected=false
 
