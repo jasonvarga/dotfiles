@@ -1,5 +1,4 @@
 tap 'homebrew/cask-drivers'
-tap 'homebrew/cask-fonts'
 tap 'epk/epk'
 tap 'nicoverbruggen/homebrew-cask'
 tap 'koekeishiya/formulae'             # yabai
