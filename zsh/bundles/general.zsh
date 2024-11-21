@@ -1,7 +1,7 @@
 alias c='clear'
 alias o='open .'
-alias l="exa --icons --group-directories-first -1"
-alias ll="exa -aFl"
+alias l="eza --icons --group-directories-first -1"
+alias ll="eza -alF"
 alias rm="trash"
 alias sizes='du -sh -c *'
 alias weather='curl -s wttr.in | sed -n "1,7p"'
