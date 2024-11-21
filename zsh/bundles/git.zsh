@@ -28,9 +28,13 @@ alias bisect='git bisect'
 # Git checkout PR
 gpr() {
   if [ -n "$1" ]; then gh pr checkout $1; return; fi
-  pr=$(gh pr list --limit=100 | fzf +m | awk '{print $1}')
-  echo "Checking out PR #$pr..."
-  gh pr checkout $(echo "$pr")
+  gh_pretty_list_prs | gum filter --placeholder 'Checkout PR...' | awk '{print $1}' | sed "s/#//" | xargs gh pr checkout
+}
+gh_pretty_list_prs() {
+  gh pr list \
+    --limit 500 \
+    --json number,title,author,headRefName,updatedAt \
+    --template '{{range .}}{{tablerow (printf "#%v" .number | autocolor "green") (truncate 60 .title) (truncate 15 .author.login) (truncate 40 .headRefName) (timeago .updatedAt)}}{{end}}'
 }
 
 # Git checkout with fzf
@@ -55,7 +59,7 @@ gcot() {
 gcor() {
     local branches branch
     branches=$(git reflog show --pretty=format:'%gs ~ %gd' --date=relative | grep checkout | grep -oE '[^ ]+ ~ .*' | awk -F~ '!seen[$1]++' | head -n 20 | awk -F' ~ HEAD@{' '{printf("%s: %s\n", substr($2, 1, length($2)-1), $1)}')
-    selection=$(echo "$branches" | fzf +m)
+    selection=$(echo "$branches" | gum filter)
     branch=$(echo "$selection" | awk '{print $NF}')
     git checkout $branch
 }
@@ -64,15 +68,10 @@ gbd() {
   if [ -n "$1" ]; then git branch -d $1; return; fi
   local branches branch selected
   branches=$(git branch -vv) &&
-  branch=$(echo "$branches" | fzf +m) &&
-  selected=$(echo "$branch" | awk '{print $1}' | sed "s/.* //")
-  echo "Are you sure you would like to delete branch [$selected]? (Type 'delete' to confirm)"
-  read confirmation
-  if [[ "$confirmation" == "delete" ]]; then
-    git branch -D $selected
-  else
-    echo "Aborted"
-  fi
+  selected=$(echo "$branches" | gum filter | awk '{print $1}' | sed "s/.* //")
+  gum confirm "Are you sure you would like to delete branch [$selected]?" \
+    --default=false --affirmative "Yes, Delete it." --negative "Nevermind." \
+    && git branch -d $selected || echo "Aborted."
 }
 
 # Switches to the default branch and deletes the branch it was just on.
