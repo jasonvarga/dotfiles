@@ -4,6 +4,7 @@ function artisan() {
 
 alias art='artisan'
 alias acc='art cache:clear'
+alias aoc='art optimize:clear'
 alias avp='art vendor:publish'
 alias arte="[ -f .env ] || cp .env.example .env"
 alias arti='comp install && arte && art key:generate && b'
