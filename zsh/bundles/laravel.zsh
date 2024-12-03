@@ -7,7 +7,7 @@ alias acc='art cache:clear'
 alias aoc='art optimize:clear'
 alias avp='art vendor:publish'
 alias arte="[ -f .env ] || cp .env.example .env"
-alias arti='comp install && arte && art key:generate && b'
+alias arti='comp install && arte && art key:generate'
 alias arl='art route:list --except-path="cp,img,!,_debugbar,_ignition,sanctum"'
 alias arla='art route:list'
 alias mfs='art migrate:fresh --seed'
