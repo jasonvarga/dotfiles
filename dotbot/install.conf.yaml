@@ -35,14 +35,6 @@
     command: "brew bundle"
   - description: Cleaning up Homebrew
     command: "brew cleanup"
-  - description: Installing global Composer dependencies
-    command: "composer global install"
-  - description: Trust Valet
-    command: "valet trust"
-  - description: Initializing Valet
-    command: "valet install"
-  - description: Parking Valet
-    command: "valet park ~/Sites && valet park ~/Sites/Support"
   - description: Clearing sudo credential cache
     command: "sudo --reset-timestamp"
   - description: Apply MacOS preferences

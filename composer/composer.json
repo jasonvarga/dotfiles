@@ -3,10 +3,8 @@
         "beyondcode/expose": "^2.0",
         "friendsofphp/php-cs-fixer": "^3.0",
         "laravel/installer": "^5",
-        "laravel/valet": "^4.5",
         "squizlabs/php_codesniffer": "*",
         "statamic/cli": "^3.0",
-        "tightenco/takeout": "^2.0",
         "laravel/pint": "^1.11",
         "phpstan/phpstan": "^1.8"
     }

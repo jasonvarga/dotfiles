@@ -1,9 +1,3 @@
-alias php='valet php'
-
-function composer() {
-    valet composer "$@"
-}
-
 alias phpunit='php vendor/bin/phpunit'
 
 p() {
@@ -44,7 +38,7 @@ alias cnrb='npm ci && nrb'
 alias inrw='npm install && nrw'
 alias cnrw='npm ci && nrw'
 
-alias b='valet open' # browse
+alias b='herd open' # browse
 alias vapor='vendor/bin/vapor'
 
 alias rray='comp require spatie/laravel-ray --dev'
