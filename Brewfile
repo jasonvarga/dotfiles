@@ -1,7 +1,6 @@
 tap 'homebrew/cask-drivers'
 tap 'epk/epk'
 tap 'nicoverbruggen/homebrew-cask'
-tap 'koekeishiya/formulae'             # yabai
 tap 'yqrashawn/goku'                   # goku
 tap 'shivammathur/php'                 # older php
 
@@ -42,7 +41,6 @@ cask 'helo'
 cask 'iterm2'
 cask 'kaleidoscope'
 cask 'karabiner-elements'
-cask 'logi-options-plus'
 cask 'nordvpn'
 cask 'rapidapi'
 cask 'phpmon'
@@ -57,6 +55,3 @@ cask 'tinkerwell'
 cask 'tower'
 cask 'transmit'
 cask 'visual-studio-code'
-
-mas 'Bear Notes', id: 1091189122
-mas 'Moom', id: 419330170
