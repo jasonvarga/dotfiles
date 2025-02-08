@@ -1,13 +1,13 @@
 {
     "require": {
-        "beyondcode/expose": "^1.0",
-        "friendsofphp/php-cs-fixer": "^2.16",
-        "laravel/installer": "dev-master",
-        "laravel/valet": "^2.7",
-        "psy/psysh": "@stable",
+        "beyondcode/expose": "^2.0",
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "laravel/installer": "^5",
+        "laravel/valet": "^4.5",
         "squizlabs/php_codesniffer": "*",
-        "statamic/cli": "^2.0",
-        "tightenco/takeout": "^1.8",
-        "permafrost-dev/ray-cli": "^1.12"
+        "statamic/cli": "^3.0",
+        "tightenco/takeout": "^2.0",
+        "laravel/pint": "^1.11",
+        "phpstan/phpstan": "^1.8"
     }
 }
