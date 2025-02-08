@@ -2,8 +2,7 @@
     "repositories": [
         {
             "type": "path",
-            "url": "/users/jason/code/statamic/cms",
-            "canonical": false
+            "url": "/users/jason/code/statamic/cms"
         }
     ]
 }
