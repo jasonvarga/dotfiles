@@ -2,8 +2,9 @@ return {
   {
     name = 'Split',
     cells = {
-      { '0,0 12x20',  positions.thirds.left,     '0,0 6x20',  positions.halves.left },
-      { '12,0 18x20', positions.twoThirds.right, '6,0 24x20', positions.halves.right }
+      { '0,0 12x20',  positions.thirds.left,     '0,0 6x20',  positions.halves.left,  positions.twoThirds.left },
+      { '12,0 18x20', positions.twoThirds.right, '6,0 24x20', positions.halves.right, positions.thirds.right },
+      { '23,9 6x10',    '23,9 6x10',                 '23,9 6x10',   '23,9 6x10',              '23,9 6x10' },
     },
     apps = {
         Arc = { cell = 1, open = true },
@@ -11,7 +12,8 @@ return {
         PhpStorm = { cell = 2, open = true },
         Tower = { cell = 2 },
         Tinkerwell = { cell = 2 },
-        TablePlus = { cell = 2 }
+        TablePlus = { cell = 2 },
+        Ray = { cell = 3 },
     }
   },
   {
