@@ -5,7 +5,6 @@ tap 'yqrashawn/goku'                   # goku
 
 brew 'antibody'
 brew 'bat'
-brew 'composer'
 brew 'dnsmasq'
 brew 'eza'
 brew 'fzf'
