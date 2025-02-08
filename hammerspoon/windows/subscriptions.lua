@@ -11,7 +11,10 @@ end)
 
 -- Subscribe to windows being created in order to automatically place them in the correct layout.
 hs.window.filter.new():subscribe(hs.window.filter.windowCreated, function(win)
-    if win:isStandard() then -- Avoid moving dialogs, etc.
+    -- Avoid moving dialogs, etc.
+    -- Also avoid when dragging a tab out of the browser into a new window, etc.
+    -- (But not Safari, womp womp)
+    if win:isStandard() and not hs.mouse.getButtons().left then
         addWindowToLayoutCell(win)
     end
 end)
@@ -44,6 +47,9 @@ appwatcher = hs.application.watcher.new(function(appName, event, app)
 end):start()
 
 function handleAppVisible(app, appName)
+    -- If in laptop mode, don't do anything.
+    if onLaptop then return end
+
     local config = apps[appName]
     if not config then return end
     local windows = app:visibleWindows()
