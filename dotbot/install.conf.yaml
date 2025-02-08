@@ -17,7 +17,6 @@
     ~/.config/starship.toml: starship.toml
     ~/.composer/composer.json: composer/composer.json
     ~/.composer/config.json: composer/config.json
-    ~/.mackup.cfg: mackup.cfg
     ~/.ssh/config: ssh/config
     ~/.hammerspoon: hammerspoon
     ~/.vimrc: vim/vimrc
