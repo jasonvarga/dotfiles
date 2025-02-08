@@ -1,4 +1,3 @@
-tap 'homebrew/cask-drivers'
 tap 'epk/epk'
 tap 'nicoverbruggen/homebrew-cask'
 tap 'yqrashawn/goku'                   # goku
