@@ -1,6 +1,5 @@
 tap 'epk/epk'
 tap 'nicoverbruggen/homebrew-cask'
-tap 'yqrashawn/goku'                   # goku
 
 brew 'antibody'
 brew 'bat'
@@ -8,12 +7,12 @@ brew 'dnsmasq'
 brew 'eza'
 brew 'fzf'
 brew 'gh'
-brew 'goku'
 brew 'mas'
 brew 'starship'
 brew 'thefuck'
 brew 'trash'
 brew 'tree'
+brew 'yqrashawn/goku/goku'
 
 cask '1password'
 cask 'cleanshot'
