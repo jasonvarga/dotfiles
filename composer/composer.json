@@ -2,7 +2,6 @@
     "require": {
         "beyondcode/expose": "^2.0",
         "friendsofphp/php-cs-fixer": "^3.0",
-        "laravel/installer": "^5",
         "squizlabs/php_codesniffer": "*",
         "statamic/cli": "^3.0",
         "laravel/pint": "^1.11",
