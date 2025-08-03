@@ -1,3 +1,4 @@
+alias php='herd php'
 alias phpunit='php vendor/bin/phpunit'
 
 p() {
