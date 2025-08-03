@@ -39,13 +39,14 @@ eval "$(starship init zsh)"
 
 
 # ------------------------------------------------------------------------------
-# Sourcing
+# Antidote
 # ------------------------------------------------------------------------------
 
-source $DOTFILES/zsh/bundles.sh
+source $(brew --prefix)/opt/antidote/share/antidote/antidote.zsh
+antidote load $DOTFILES/zsh/bundles.txt
 
 sz() {
-  sh $DOTFILES/zsh/compile_bundles.sh
+  rm $DOTFILES/zsh/bundles.zsh
   source $DOTFILES/zsh/zshrc
   echo 'Sourced zshrc'
 }

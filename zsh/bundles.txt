@@ -1,4 +1,4 @@
-# Run `antibody update` to update.
+# Run `antidote update` to update.
 
 ohmyzsh/oh-my-zsh
 marlonrichert/zsh-autocomplete

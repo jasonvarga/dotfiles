@@ -1,7 +1,7 @@
 tap 'epk/epk'
 tap 'nicoverbruggen/homebrew-cask'
 
-brew 'antibody'
+brew 'antidote'
 brew 'bat'
 brew 'dnsmasq'
 brew 'eza'
