@@ -32,6 +32,7 @@ compv() {
 alias nrd='npm run dev'
 alias nrb='npm run build'
 alias nrw='npm run watch'
+alias nrt='npm run test'
 alias inrd='npm install && nrd'
 alias cnrd='npm ci && nrd'
 alias inrb='npm install && nrb'
