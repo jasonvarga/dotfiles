@@ -14,6 +14,9 @@ alias sbs='sudo brew services'
 alias pstorm='open -a "PhpStorm"'
 eval $(thefuck --alias)
 
+alias 'git?'="gh copilot suggest -t git"
+alias '??'="gh copilot suggest -t shell"
+
 # Copy pwd to clipboard without trailing newline
 alias cwd="pwd && pwd | tr -d '\n' | pbcopy && echo 'Copied to clipboard 📁'"
 
