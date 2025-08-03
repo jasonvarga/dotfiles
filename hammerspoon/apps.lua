@@ -33,6 +33,11 @@ return {
     },
     Spotify = {
         id = 'com.spotify.client',
+        --key = 'm', -- music
+        position = positions.center.medium,
+    },
+    Music = {
+        id = 'com.apple.Music',
         key = 'm', -- music
         position = positions.center.medium,
     },
