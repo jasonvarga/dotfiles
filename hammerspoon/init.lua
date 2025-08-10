@@ -2,6 +2,8 @@
 -- Setup
 ----------------------------------------------------------------------------------------------------
 
+require('hs.ipc') -- Allow running Hammerspoon from command line
+
 hs.loadSpoon('ReloadConfiguration'):start()
 local notification = hs.notify.new({title = 'Hammerspoon', informativeText = 'Config loading...'}):send()
 
