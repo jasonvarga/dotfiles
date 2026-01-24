@@ -8,7 +8,7 @@ alias gcod='gco $(gdb)'
 alias gap="git add -p"
 alias gpl='git pull'
 alias gplr='git pull --rebase'
-alias gpsh='git push'
+alias gpsh='gpf' # "git push", but also fetches.
 alias gst='git stash -u'
 alias gpop='git stash pop'
 alias gm='git merge'
@@ -64,6 +64,23 @@ gh_pretty_list_prs() {
     --template '{{range .}}{{tablerow (printf "#%v" .number | autocolor "green") (truncate 60 .title) (truncate 15 .author.login) (truncate 40 .headRefName) (timeago .updatedAt)}}{{end}}'
 }
 
+# Git fetch tracked - fetches the current branch's remote to update tracking info
+gft() {
+    local remote=$(git config --get branch.$(git branch --show-current).remote 2>/dev/null)
+    if [ -n "$remote" ]; then
+        git fetch $remote
+    else
+        echo "No remote configured for current branch"
+        return 1
+    fi
+}
+
+# Git push and fetch - pushes then fetches to update tracking info
+# Useful when pushing to fork remotes to avoid "ahead by X commits" status
+gpf() {
+    git push "$@" && gft
+}
+
 # Git checkout with fzf
 gcob() {
   if [ -n "$1" ]; then git checkout $1; return; fi
@@ -105,19 +122,27 @@ gbd() {
 # gdbard = "Git Delete Branch And Return to Default"
 function gdbard {
     branch=$(git branch --show-current)
+    remote=$(git config --get branch.$branch.remote 2>/dev/null)
     default_branch=$(gdb)
     git checkout $default_branch
     git branch -D $branch
     git pull
+    if [ -n "$remote" ] && [ "$remote" != "origin" ]; then
+        grclean $remote
+    fi
 }
 
 # Switches to the master branch and deletes the branch it was just on.
 # gdbarm = "Git Delete Branch And Return to Master"
 function gdbarm {
     branch=$(git branch --show-current)
+    remote=$(git config --get branch.$branch.remote 2>/dev/null)
     git checkout master
     git branch -D $branch
     git pull
+    if [ -n "$remote" ] && [ "$remote" != "origin" ]; then
+        grclean $remote
+    fi
 }
 
 # Check if a branch exists on the remote
@@ -138,4 +163,70 @@ function gcolt() {
     tag=$(glt)
     echo "Checking out $tag"
     gco $tag
+}
+
+# Git Remote List - lists all non-origin remotes and their tracking branches
+function grlist() {
+    local remotes=$(git remote | grep -v "^origin$")
+
+    if [ -z "$remotes" ]; then
+        echo "No non-origin remotes found"
+        return
+    fi
+
+    echo "$remotes" | while read -r remote; do
+        local url=$(git remote get-url "$remote" 2>/dev/null)
+        echo ""
+        echo "$remote ($url):"
+        local branches=$(git branch -vv | grep "\[$remote/")
+        if [ -n "$branches" ]; then
+            echo "$branches" | sed 's/^/  /'
+        else
+            echo "  (no tracking branches)"
+        fi
+    done
+}
+
+# Git Remote Cleanup - removes fork remotes that are no longer used by any branch
+# Usage: grclean [remote_name]
+#   - With remote_name: removes that specific remote if no branches use it
+#   - Without args: removes all unused remotes except origin
+function grclean() {
+    if [ -n "$1" ]; then
+        local remote=$1
+
+        if [ "$remote" = "origin" ]; then
+            echo "Cannot delete origin remote"
+            return 1
+        fi
+
+        if ! git remote | grep -q "^${remote}$"; then
+            echo "Remote '$remote' does not exist"
+            return 1
+        fi
+
+        if git branch -vv | grep -q "\[$remote/"; then
+            echo "Remote '$remote' is still used by other branches"
+            git branch -vv | grep "\[$remote/"
+            return 1
+        fi
+
+        echo "Removing unused remote: $remote"
+        git remote remove $remote
+    else
+        local removed=0
+        for remote in $(git remote | grep -v "^origin$"); do
+            if ! git branch -vv | grep -q "\[$remote/"; then
+                echo "Removing unused remote: $remote"
+                git remote remove $remote
+                ((removed++))
+            fi
+        done
+
+        if [ $removed -eq 0 ]; then
+            echo "No unused remotes to clean up"
+        else
+            echo "Cleaned up $removed remote(s)"
+        fi
+    fi
 }
