@@ -8,6 +8,7 @@ export ZSH_CUSTOM=$DOTFILES/zsh/custom
 
 export PATH=/opt/homebrew/bin:${PATH}
 export PATH=/opt/homebrew/sbin:${PATH}
+export PATH=${PATH}:~/.local/bin
 export PATH=${PATH}:/usr/local/bin
 export PATH=${PATH}:/usr/local/sbin
 export PATH=~/.composer/vendor/bin:${PATH}
