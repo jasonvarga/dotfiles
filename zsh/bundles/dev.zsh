@@ -52,6 +52,14 @@ alias cr='ray -C' # clear ray
 alias ts='open-docker && takeout start'
 alias nginxlog='tail -f ~/.config/valet/Log/nginx-error.log'
 
+pint() {
+  if [ -f "vendor/bin/pint" ]; then
+    vendor/bin/pint "$@"
+  else
+    ~/.composer/vendor/bin/pint "$@"
+  fi
+}
+
 # Read DB creds from .env file and open in TablePlus
 opendb () {
    [ ! -f .env ] && { echo "No .env file found."; return 1; }
