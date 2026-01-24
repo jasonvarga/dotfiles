@@ -31,6 +31,7 @@ compv() {
 
 alias nrd='npm run dev'
 alias nrb='npm run build'
+alias nrbd='npm run build-dev'
 alias nrw='npm run watch'
 alias nrt='npm run test'
 alias inrd='npm install && nrd'
@@ -39,6 +40,8 @@ alias inrb='npm install && nrb'
 alias cnrb='npm ci && nrb'
 alias inrw='npm install && nrw'
 alias cnrw='npm ci && nrw'
+alias nrsb='npm run storybook'
+alias nrsbd='npm run storybook-docs'
 
 alias b='herd open' # browse
 alias vapor='vendor/bin/vapor'
