@@ -2,6 +2,6 @@
   "alwaysThinkingEnabled": true,
   "statusLine": {
     "type": "command",
-    "command": "~/.dotfiles/claude/statusline-command.sh"
+    "command": "~/.dotfiles/claude/statusline.sh"
   }
 }
