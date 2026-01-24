@@ -1,2 +1,0 @@
-ZSHZ_CASE=smart
-ZSHZ_UNCOMMON=1

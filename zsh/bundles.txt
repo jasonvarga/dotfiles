@@ -7,6 +7,5 @@ zsh-users/zsh-syntax-highlighting
 jessarcher/zsh-artisan
 pixelfear/zsh-please
 molovo/tipz
-agkozak/zsh-z
 aloxaf/fzf-tab
 ~/.dotfiles/zsh/bundles

@@ -15,6 +15,7 @@ brew 'thefuck'
 brew 'trash'
 brew 'tree'
 brew 'yqrashawn/goku/goku'
+brew 'zoxide'
 
 cask '1password'
 cask 'cleanshot'
