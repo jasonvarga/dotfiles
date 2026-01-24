@@ -1,0 +1,16 @@
+[[session]]
+name = "misc"
+path = "~"
+
+[[session]]
+name = "cms"
+path = "~/code/statamic/cms"
+windows = ["vite", "sandbox"]
+
+[[window]]
+name = "vite"
+startup_command = "npm run dev"
+
+[[window]]
+name = "sandbox"
+path = "~/code/statamic/sandbox"

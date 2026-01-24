@@ -20,6 +20,8 @@
     ~/.ssh/config: ssh/config
     ~/.hammerspoon: hammerspoon
     ~/.vimrc: vim/vimrc
+    ~/.tmux.conf: tmux/tmux.conf
+    ~/.config/sesh/sesh.toml: tmux/sesh.toml
 
 - shell:
   - description: Hushing login
