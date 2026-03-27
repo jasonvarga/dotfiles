@@ -1,7 +1,7 @@
 ---
 name: review-prs
 description: Review open GitHub pull requests. Use when reviewing PRs, checking PR status, or auditing open pull requests on a repository.
-argument-hint: "[--repo owner/repo] [--output dir]"
+argument-hint: "[PR number] [--repo owner/repo] [--output dir]"
 disable-model-invocation: true
 allowed-tools: Bash(gh *), Bash(mkdir *), Bash(rm *)
 ---
@@ -13,6 +13,7 @@ Review open pull requests on a GitHub repository, creating detailed markdown rev
 ## Arguments
 
 Parse from `$ARGUMENTS`:
+- A bare number (e.g. `123`) - Review a single PR by number
 - `--repo` - Repository to review (default: current repo via `gh repo view --json nameWithOwner -q .nameWithOwner`)
 - `--output` - Output directory for reviews (default: `pr-reviews`)
 
@@ -26,6 +27,8 @@ Parse from `$ARGUMENTS`:
    ```
 
 3. **Create output directory** if it doesn't exist
+
+**If a single PR number was provided, skip to step 8.**
 
 4. **Fetch open PRs**:
    ```bash
@@ -47,7 +50,15 @@ Parse from `$ARGUMENTS`:
    - Delete review files for PRs that have been merged or closed
    - Report which files were cleaned up
 
-8. **Review each PR in parallel** using the Task tool with `subagent_type: general-purpose`. Each subagent should:
+8. **Review PRs**:
+
+   **If reviewing a single PR** (bare number was provided): review it directly in the current context — do NOT use a subagent:
+   - Fetch PR details: `gh pr view <number> --repo <repo>`
+   - Fetch PR diff: `gh pr diff <number> --repo <repo>`
+   - Analyze the changes thoroughly
+   - Write a review to `<output>/<number>.md` with the format from [review-template.md](review-template.md)
+
+   **If reviewing multiple PRs**: review each in parallel using the Task tool with `subagent_type: general-purpose`. Each subagent should:
    - Fetch PR details: `gh pr view <number> --repo <repo>`
    - Fetch PR diff: `gh pr diff <number> --repo <repo>`
    - Analyze the changes thoroughly
