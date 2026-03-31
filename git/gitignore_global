@@ -10,3 +10,4 @@ Thumbs.db
 .vagrant/
 .antlers.json
 antlers-language-server
+pr-reviews
