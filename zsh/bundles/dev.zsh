@@ -1,5 +1,6 @@
 alias php='herd php'
 alias phpunit='php vendor/bin/phpunit'
+alias composer='herd composer'
 
 p() {
     if [ -f "vendor/bin/pest" ]; then
