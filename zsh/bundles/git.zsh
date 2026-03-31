@@ -145,6 +145,19 @@ function gdbarm {
     fi
 }
 
+# Switches to the 5.x branch and deletes the branch it was just on.
+# gdbar5 = "Git Delete Branch And Return to 5.x"
+function gdbar5 {
+    branch=$(git branch --show-current)
+    remote=$(git config --get branch.$branch.remote 2>/dev/null)
+    git checkout 5.x
+    git branch -D $branch
+    git pull
+    if [ -n "$remote" ] && [ "$remote" != "origin" ]; then
+        grclean $remote
+    fi
+}
+
 # Check if a branch exists on the remote
 # grbe = "Git Remote Branch Exists"
 function grbe {
