@@ -6,8 +6,20 @@ alias cucms='comp update statamic/cms'
 alias cmspath='comp show statamic/cms --path'
 alias cms='cd ~/code/statamic/cms'
 alias plzuser="cp $DOTFILES/statamic/jason@statamic.com.yaml users/jason@statamic.com.yaml && echo 'User created.'"
-alias plzpro="sed -i \"\" \"s/'pro'\ =>\ false/'pro'\ =>\ true/\" config/statamic/editions.php && echo 'Pro enabled.'"
 alias changelog='gcslt && gcslt | pbcopy'
+
+function plzpro {
+    if grep -q "env('STATAMIC_PRO_ENABLED'" config/statamic/editions.php 2>/dev/null; then
+        if grep -q "^STATAMIC_PRO_ENABLED=" .env 2>/dev/null; then
+            sed -i "" "s/^STATAMIC_PRO_ENABLED=.*/STATAMIC_PRO_ENABLED=true/" .env
+        else
+            echo "STATAMIC_PRO_ENABLED=true" >> .env
+        fi
+    else
+        sed -i "" "s/'pro' => false/'pro' => true/" config/statamic/editions.php
+    fi
+    echo 'Pro enabled.'
+}
 
 function plzlink {
     if [ -d "public/vendor/statamic/cp" ]; then
