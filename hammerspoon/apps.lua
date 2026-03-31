@@ -6,6 +6,10 @@
 return {
     Code = {
         id = 'com.microsoft.VSCode',
+        focus = positions.center.large,
+    },
+    Cursor = {
+        id = 'com.todesktop.230313mzl4w4u92',
         key = 'c',
         focus = positions.center.large,
     },
