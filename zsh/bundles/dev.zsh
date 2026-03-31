@@ -90,3 +90,38 @@ open-docker() {
 }
 
 alias sshkey="cat ~/.ssh/id_ed25519.pub | pbcopy && echo 'Copied SSH key to clipboard 🔑'"
+
+# Build a Composer version constraint from a git branch name and tag.
+# Usage: _composer_constraint <branch> <tag>
+# Numeric release branches (e.g. 3.4, 3.x) produce a stability flag.
+# All other branches produce a dev alias (dev-<branch> as <tag>).
+function _composer_constraint() {
+    local branch="$1"
+    local tag="$2"
+    if [[ $branch =~ ^[0-9]+\.[0-9]+$ ]]; then
+        echo "$branch.x-dev"
+    elif [[ $branch =~ ^[0-9]+\.x+$ ]]; then
+        echo "$branch-dev as $tag"
+    else
+        echo "dev-$branch as $tag"
+    fi
+}
+
+# Patch a composer.json to add a path repository and set a package constraint.
+# Usage: _patch_composer_json <composer-json-path> <package> <constraint> <package-path>
+function _patch_composer_json() {
+    local composer_json="$1"
+    local package="$2"
+    local constraint="$3"
+    local package_path="$4"
+    local tmp
+    tmp=$(mktemp)
+    jq \
+        --arg url "$package_path" \
+        --arg package "$package" \
+        --arg constraint "$constraint" \
+        '.repositories = ([{"type":"path","url":$url,"options":{"symlink":true}}] + ((.repositories // []) | map(select(.url != $url))))
+         | .require[$package] = $constraint' \
+        "$composer_json" > "$tmp" \
+        && mv "$tmp" "$composer_json"
+}

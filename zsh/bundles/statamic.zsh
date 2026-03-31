@@ -30,17 +30,11 @@ function plzlink {
 }
 
 function crcms() {
-    tag=$(cms && glt)
-    tag=${tag#v}
-    branch=$(cms && git rev-parse --abbrev-ref HEAD)
-    if [[ $branch =~ ^[0-9]+\.[0-9]+$ ]]; then
-        constraint="$branch.x-dev"
-    elif [[ $branch =~ ^[0-9]+\.x+$ ]]; then
-        constraint="$branch-dev"
-    else
-        constraint="dev-$branch"
-    fi
-    command="composer require \"statamic/cms $constraint as $tag\" -w $@"
-    echo $command
-    eval $command
+    local package_path=$(cms && pwd)
+    local tag=$(git -C "$package_path" describe --tags --abbrev=0)
+    local tag=${tag#v}
+    local branch=$(git -C "$package_path" rev-parse --abbrev-ref HEAD)
+    local constraint=$(_composer_constraint "$branch" "$tag")
+    _patch_composer_json composer.json "statamic/cms" "$constraint" "$package_path"
+    composer update statamic/cms --no-interaction $@
 }
