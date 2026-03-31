@@ -70,7 +70,8 @@ return {
     },
     Finder = {
         id = 'com.apple.finder',
-        key = 'f'
+        key = 'f',
+        position = positions.center.small
     },
     Tinkerwell = {
         id = 'de.beyondco.tinkerwell',
