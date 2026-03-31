@@ -23,7 +23,7 @@ function plzpro {
 
 function plzlink {
     if [ -d "public/vendor/statamic/cp" ]; then
-        rm -f public/vendor/statamic/cp
+        rm public/vendor/statamic/cp
     fi
     mkdir -p public/vendor/statamic
     ln -s /Users/jason/Code/statamic/cms/resources/dist public/vendor/statamic/cp
