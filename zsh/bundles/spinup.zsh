@@ -44,15 +44,15 @@ function spinup-statamic() {
     return 1
   fi
 
-  echo "→ Running: statamic new $site_name (inside $herd_dir)"
-  (cd "$herd_dir" && statamic new "$site_name" --no-interaction --quiet)
+  echo "→ Running: statamic new (inside $herd_dir)"
+  (cd "$herd_dir" && statamic new "$site_name" jasonvarga/sandbox-starter-kit --local --no-interaction --quiet)
 
   # Patch composer.json — add path repo + branch alias constraint
   echo "→ Patching composer.json"
   _patch_composer_json "$site_path/composer.json" "statamic/cms" "$constraint" "$package_path"
 
   echo "→ Requiring spatie/laravel-ray"
-  (cd "$site_path" && composer require spatie/laravel-ray --no-update)
+  (cd "$site_path" && composer require spatie/laravel-ray --no-update --quiet)
 
   echo "→ Running composer update"
   (cd "$site_path" && composer update statamic/cms --no-interaction)
@@ -61,6 +61,7 @@ function spinup-statamic() {
   rm "$site_path/public/vendor/statamic/cp"
   mkdir -p "$site_path/public/vendor/statamic"
   ln -s "$package_path/resources/dist" "$site_path/public/vendor/statamic/cp"
+  ln -s "$package_path/resources/dist-frontend" "$site_path/public/vendor/statamic/frontend"
 
   echo "→ Creating user"
   cp "$DOTFILES/statamic/jason@statamic.com.yaml" "$site_path/users/jason@statamic.com.yaml"
