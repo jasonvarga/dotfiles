@@ -30,6 +30,7 @@ export HOMEBREW_REPOSITORY="/opt/homebrew"
 export HOMEBREW_NO_AUTO_UPDATE="1"
 export EDITOR="vim"
 export DO_NOT_TRACK=true
+export COLORTERM=truecolor
 
 
 # ------------------------------------------------------------------------------
