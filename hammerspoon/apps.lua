@@ -15,6 +15,10 @@ return {
     },
     PhpStorm = {
         id = 'com.jetbrains.PhpStorm',
+        position = positions.center.large,
+    },
+    Polyscope = {
+        id = 'com.getpolyscope.app',
         key = 'p',
         position = positions.center.large,
     },

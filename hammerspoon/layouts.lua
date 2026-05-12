@@ -9,7 +9,8 @@ return {
     apps = {
         Arc = { cell = 1, open = true },
         Code = { cell = 2 },
-        PhpStorm = { cell = 2, open = true },
+        PhpStorm = { cell = 2 },
+        Polyscope = { cell = 2, open = true },
         Tower = { cell = 2 },
         Tinkerwell = { cell = 2 },
         TablePlus = { cell = 2 },
@@ -26,7 +27,8 @@ return {
         Ray = { cell = 1, open = true },
         Arc = { cell = 2, open = true },
         Code = { cell = 2 },
-        PhpStorm = { cell = 2, open = true },
+        PhpStorm = { cell = 2 },
+        Polyscope = { cell = 2, open = true },
         Tower = { cell = 2 },
         Tinkerwell = { cell = 2 },
         TablePlus = { cell = 2 },
@@ -43,7 +45,8 @@ return {
         Arc = { cell = 2, open = true },
         Ray = { cell = 1, open = true },
         Code = { cell = 3 },
-        PhpStorm = { cell = 3, open = true },
+        PhpStorm = { cell = 3 },
+        Polyscope = { cell = 3, open = true },
         Tower = { cell = 3 },
         Tinkerwell = { cell = 3 },
         TablePlus = { cell = 3 },
@@ -58,6 +61,7 @@ return {
         Arc = { cell = 1 },
         Code = { cell = 1 },
         PhpStorm = { cell = 1 },
+        Polyscope = { cell = 1 },
     },
   },
   {
@@ -70,6 +74,7 @@ return {
         Arc = { cell = 1 },
         Code = { cell = 1 },
         PhpStorm = { cell = 1 },
+        Polyscope = { cell = 1 },
         Ray = { cell = 2 },
     }
   }
