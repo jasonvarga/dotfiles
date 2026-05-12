@@ -1,7 +1,9 @@
 {
-  "alwaysThinkingEnabled": true,
   "statusLine": {
     "type": "command",
     "command": "~/.dotfiles/claude/statusline.sh"
-  }
+  },
+  "alwaysThinkingEnabled": true,
+  "theme": "light",
+  "model": "sonnet"
 }

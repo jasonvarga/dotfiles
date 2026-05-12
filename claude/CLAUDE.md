@@ -13,3 +13,5 @@ Avoid self-explanatory comments. For example:
 // Do something
 this.doSomething()
 ```
+
+Don't always automatically make code changes. If the prompt seems to be more of a question than a request to implement, just answer the question. You can ask if you should implement it.
