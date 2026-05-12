@@ -91,6 +91,16 @@ open-docker() {
 
 alias sshkey="cat ~/.ssh/id_ed25519.pub | pbcopy && echo 'Copied SSH key to clipboard 🔑'"
 
+cwdsand() {
+    local dir="${PWD:t}"
+    local target="$HOME/sites/sandboxes/$dir"
+    if [ -d "$target" ]; then
+        cd "$target"
+    else
+        echo "Directory $target does not exist."
+    fi
+}
+
 # Build a Composer version constraint from a git branch name and tag.
 # Usage: _composer_constraint <branch> <tag>
 # Numeric release branches (e.g. 3.4, 3.x) produce a stability flag.
