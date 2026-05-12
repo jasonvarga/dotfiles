@@ -10,4 +10,4 @@ fi
 
 # Key bindings
 # ------------
-source "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
+[[ -t 0 && -t 1 ]] && source "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
