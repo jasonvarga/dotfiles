@@ -1,6 +1,7 @@
 [user]
 	name = Jason Varga
 	email = jason@pixelfear.com
+	signingkey = key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIITCWl4NosC34pOoPOQhMS/tevT02o5GfYnh8ntaezcU jason@Jasons-MacBook-Pro-M4.local
 [mergetool]
 	keepBackup = true
 [credential]
@@ -17,3 +18,9 @@
 	ff = only
 [advice]
     detachedHead = false
+[gpg]
+	format = ssh
+[commit]
+	gpgsign = true
+[gpg "ssh"]
+	allowedSignersFile = /Users/jason/.ssh/allowed_signers
