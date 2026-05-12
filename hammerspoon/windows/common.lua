@@ -3,7 +3,13 @@ maximizedWindows = {}
 function positionAppUsingGrid(application, cell, shouldOpen)
     local app
     if shouldOpen then
-        app = getOrOpenApp(application)
+        app = getApp(application)
+        if app == nil then
+            local button = hs.dialog.blockAlert("Open " .. application .. "?", "", "Open", "Skip")
+            if button == "Open" then
+                app = getOrOpenApp(application)
+            end
+        end
     else
         app = getApp(application)
     end
