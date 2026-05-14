@@ -10,5 +10,11 @@
       [:!S#Pright_shift :caps_lock]
       [:!R#Pleft_shift :caps_lock]
     ]}
+
+    ; F5 is the microphone/dictation button
+    ; and I have Raycast using ^⌥⌘M for dictation.
+    {:des "F5 to Control-Option-Command-M" :rules [
+      [:f5 :!TOCm]
+    ]}
   ]
 }
