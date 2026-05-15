@@ -1,6 +1,7 @@
 #!/bin/bash
 input=$(cat)
 cwd=$(echo "$input" | jq -r '.workspace.current_dir')
+model=$(echo "$input" | jq -r '.model.display_name // ""')
 context_used=$(echo "$input" | jq -r '.context_window.used_percentage // 0' | xargs printf '%.0f')
 
 prompt=$(starship prompt --path "$cwd" \
@@ -10,4 +11,4 @@ prompt=$(starship prompt --path "$cwd" \
 GRAY=$'\e[90m'
 RESET=$'\e[0m'
 
-echo "$prompt ${GRAY}(${context_used}%)${RESET}"
+echo "$prompt ${GRAY}(${model:+$model, }${context_used}%)${RESET}"
