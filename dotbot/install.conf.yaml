@@ -22,9 +22,9 @@
     ~/.vimrc: vim/vimrc
     ~/.tmux.conf: tmux/tmux.conf
     ~/.config/sesh/sesh.toml: tmux/sesh.toml
-    ~/.claude/settings.json: claude/settings.json
-    ~/.claude/CLAUDE.md: claude/CLAUDE.md
-    ~/.claude/skills: claude/skills
+    ~/.claude/settings.json: ai/claude/settings.json
+    ~/.claude/CLAUDE.md: ai/claude/CLAUDE.md
+    ~/.claude/skills: ai/claude/skills
 
 - shell:
   - description: Hushing login

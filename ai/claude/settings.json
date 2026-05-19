@@ -1,7 +1,7 @@
 {
   "statusLine": {
     "type": "command",
-    "command": "~/.dotfiles/claude/statusline.sh"
+    "command": "~/.dotfiles/ai/claude/statusline.sh"
   },
   "alwaysThinkingEnabled": true,
   "tui": "fullscreen",
