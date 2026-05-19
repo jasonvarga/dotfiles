@@ -4,6 +4,7 @@
     "command": "~/.dotfiles/claude/statusline.sh"
   },
   "alwaysThinkingEnabled": true,
+  "tui": "fullscreen",
   "theme": "light",
   "model": "sonnet"
 }
