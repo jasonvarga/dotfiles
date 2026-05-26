@@ -52,6 +52,7 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
 5. **Read changed files** in the current codebase to understand the context around each change. This is critical for catching behavioral regressions. Skip vendored, generated, and lock files.
 
 6. **Analyze the changes** with this priority:
+   - **Purpose** — If there's a linked issue, does this PR actually resolve it?
    - **Bugs** — Logic errors, null/undefined refs, off-by-one, race conditions, type mismatches
    - **Behavioral regressions** — Does this break existing functionality, contracts, introduce breaking changes?
    - **Security issues** — Injection, auth bypass, data exposure, XSS
