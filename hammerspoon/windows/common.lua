@@ -136,36 +136,6 @@ function bindPositionSelector(key)
 end
 
 
-function bindWarp(key)
-    local chooser = hs.chooser.new(function(choice)
-        if not choice then return end
-        positionWindowUsingRect(hs.window.focusedWindow(), choice.window:frame())
-        -- If the chosen window is in the layout, add the focused window to the layout too.
-        if currentLayout.windows[choice.window:id()] then
-            currentLayout.windows[hs.window.focusedWindow():id()] = choice.window:frame()
-        end
-    end)
-
-    hyper:bind({}, key, function()
-    local windows = hs.fnutils.filter(hs.window.visibleWindows(), function(win)
-        local focusedWin = hs.window.focusedWindow()
-        return win:id() ~= focusedWin:id() and win:frame() ~= focusedWin:frame()
-    end)
-    local choices = map(function(window)
-        local app = window:application()
-            return {
-                text = app:name(),
-                subText = window:title() or '--',
-                window = window,
-                image = hs.image.imageFromAppBundle(window:application():bundleID()),
-            }
-        end, windows)
-        chooser:searchSubText(true):choices(choices):query(''):show()
-    end)
-end
-
-
-
 -- Puts a window on top of the last window of the same app and
 -- adds it to the layout if that window is already in the layout.
 function addWindowToLayoutCell(win)

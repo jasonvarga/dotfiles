@@ -7,6 +7,7 @@ currentLayoutConfiguration = nil
 require('windows.regular')
 require('windows.focus')
 require('windows.common')
+require('windows.warp')
 require('windows.subscriptions')
 require('windows.resizer')
 
