@@ -58,6 +58,10 @@ return {
         key = 'i',
         position = positions.center.tiny,
     },
+    Solo = {
+        id = 'com.soloterm.solo',
+        position = positions.center.small
+    },
     Tower = {
         id = 'com.fournova.Tower3',
         key = 'g', -- git
