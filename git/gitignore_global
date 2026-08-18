@@ -11,3 +11,4 @@ Thumbs.db
 .antlers.json
 antlers-language-server
 pr-reviews
+**/.claude/settings.local.json
