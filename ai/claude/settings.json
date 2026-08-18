@@ -92,6 +92,19 @@
     ],
     "defaultMode": "auto"
   },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.dotfiles/ai/claude/hooks/solo.sh"
+          }
+        ]
+      }
+    ]
+  },
   "enableWorkflows": false,
   "awaySummaryEnabled": false,
   "skipAutoPermissionPrompt": true
