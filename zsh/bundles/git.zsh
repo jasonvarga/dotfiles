@@ -18,7 +18,7 @@ alias glt='git describe --tags --abbrev=0' # git latest tag
 alias gcslt='git --no-pager log $(glt)..HEAD --oneline --no-decorate --first-parent --no-merges' # git commits since latest tag
 alias gin="git init && git add . && gc 'Initial commit.'"
 alias gpub='git push --set-upstream origin HEAD'
-alias gt='gittower .'
+alias gt='gittower . && echo "Opening in Git Tower"'
 alias gdb='git remote show origin | grep "HEAD branch" | cut -d " " -f5'
 alias gpro='gh pr view --web'
 alias wip="git add . && git commit -m 'wip'"
