@@ -1,30 +1,13 @@
+format = """
+$directory$git_branch$git_status$line_break$character
+"""
+
 [character]
 success_symbol = '[→](bold green)'
 error_symbol = '[→](bold red)'
 
 [directory]
 truncation_length = 5
-
-[package]
-disabled = true
-
-[aws]
-disabled = true
-
-[php]
-disabled = true
-
-[nodejs]
-disabled = true
-
-[python]
-disabled = true
-
-[docker_context]
-disabled = true
-
-[vagrant]
-disabled = true
 
 [git_status]
 format = '([\[$conflicted$deleted$renamed$modified$staged$untracked$ahead_behind\]]($style) )'
