@@ -5,8 +5,8 @@
   },
   "alwaysThinkingEnabled": true,
   "tui": "fullscreen",
-  "theme": "light",
-  "model": "sonnet",
+  "theme": "auto",
+  "model": "opus[1m]",
   "permissions": {
     "allow": [
       "Edit",
@@ -89,6 +89,10 @@
       "Bash(rm -rf *)",
       "Read(./.env)",
       "Read(./.env.*)"
-    ]
-  }
+    ],
+    "defaultMode": "auto"
+  },
+  "enableWorkflows": false,
+  "awaySummaryEnabled": false,
+  "skipAutoPermissionPrompt": true
 }
