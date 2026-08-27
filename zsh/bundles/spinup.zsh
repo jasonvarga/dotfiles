@@ -59,6 +59,7 @@ function spinup-statamic() {
 
   echo "→ Symlinking assets"
   rm "$site_path/public/vendor/statamic/cp"
+  rm "$site_path/public/vendor/statamic/frontend"
   mkdir -p "$site_path/public/vendor/statamic"
   ln -s "$package_path/resources/dist" "$site_path/public/vendor/statamic/cp"
   ln -s "$package_path/resources/dist-frontend" "$site_path/public/vendor/statamic/frontend"

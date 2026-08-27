@@ -54,18 +54,21 @@ alone with `statamic-sandbox`.
 The subagent's session is gone; this one still needs to move. Call
 **EnterWorktree** with `path: .claude/worktrees/pr-<n>`.
 
-## 4. Start the asset watcher
+## 4. Start the asset watchers
 
-Started here, not in the subagent, so it survives past that session and stays
+Started here, not in the subagent, so they survive past that session and stay
 stoppable at teardown:
 
 ```bash
-npm run dev   # run with run_in_background: true
+npm run dev            # run with run_in_background: true
+npm run frontend-dev   # run with run_in_background: true
 ```
 
-It rebuilds `resources/dist` + `resources/dist-frontend`, which
-`spinup-statamic` symlinked into the sandbox, so edits show up live. Note the
-background task so it can be stopped at teardown.
+`npm run dev` rebuilds `resources/dist`, the CP bundle. `npm run frontend-dev`
+rebuilds `resources/dist-frontend`, the front-end helpers bundle — `npm run dev`
+does **not** touch it, they're separate Vite configs. `spinup-statamic`
+symlinked both dirs into the sandbox, so edits to either show up live. Note
+both background tasks so they can be stopped at teardown.
 
 ## 5. Report
 

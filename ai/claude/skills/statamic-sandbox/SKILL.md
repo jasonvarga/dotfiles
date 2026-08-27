@@ -2,7 +2,7 @@
 name: statamic-sandbox
 description: >-
   Spin up (or tear down) a Herd sandbox site backed by the current statamic/cms
-  branch, using the spinup-statamic shell function, plus an asset watcher. Use
+  branch, using the spinup-statamic shell function, plus asset watchers. Use
   when the user wants a sandbox for a branch or worktree they already have, or
   wants to start a new statamic/cms branch in a sandbox, or says "tear down the
   sandbox" / "clean up this sandbox". Only operates inside the statamic/cms
@@ -12,12 +12,12 @@ description: >-
 # Statamic Sandbox
 
 Create a Herd sandbox site at `<name>.test` that runs against a checkout, via
-the `spinup-statamic` shell function, and keep an asset watcher running so edits
+the `spinup-statamic` shell function, and keep asset watchers running so edits
 show up live. Also tears the sandbox down when done.
 
 `spinup-statamic` runs `statamic new` plus a full `composer update`, so the
 spinup runs in a **subagent** to keep minutes of build output out of this
-session. The asset watcher is deliberately started *here* instead — a
+session. The asset watchers are deliberately started *here* instead — a
 background task dies with the subagent that started it, and this one needs to
 survive across turns and still be stoppable at teardown.
 
@@ -75,27 +75,31 @@ If it reports a failure, surface the reason and stop. In particular, "site
 already exists" means an old sandbox is still parked — offer teardown or a
 different name rather than retrying.
 
-## 5. Start the asset watcher
+## 5. Start the asset watchers
 
-Always start it (no "build or watch?" prompt), from this session, **in the
+Always start both (no "build or watch?" prompt), from this session, **in the
 background**:
 
 ```bash
-npm run dev   # run with run_in_background: true
+npm run dev            # run with run_in_background: true
+npm run frontend-dev   # run with run_in_background: true
 ```
 
-`npm run dev` rebuilds `resources/dist` + `resources/dist-frontend`, which
-`spinup-statamic` symlinked into the sandbox, so edits show up live at
-`<name>.test`. The watcher stays up while you work; it only re-surfaces if it
-exits. Note the background task so it can be stopped at teardown.
+`npm run dev` (plain `vite`) watches `resources/js` and rebuilds
+`resources/dist`, the CP bundle. `npm run frontend-dev` uses the separate
+`vite-frontend.config.js` and rebuilds `resources/dist-frontend`, the
+front-end helpers bundle — `npm run dev` does **not** touch it. `spinup-statamic`
+symlinked both dirs into the sandbox, so edits to either show up live at
+`<name>.test`. Both watchers stay up while you work; they only re-surface if
+one exits. Note both background tasks so they can be stopped at teardown.
 
 If this session isn't in the worktree (e.g. the spinup was for a path elsewhere),
-run `npm run dev --prefix <worktree>` instead.
+add `--prefix <worktree>` to each command instead.
 
 ## 6. Report
 
 Relay the subagent's summary — the agent's report isn't shown to the user. The
-site URL (`http://<name>.test`), the branch, and that the watcher is running.
+site URL (`http://<name>.test`), the branch, and that the watchers are running.
 
 ## 7. Teardown
 
@@ -124,11 +128,12 @@ discover it.
    one, that's a job for `clean-up-sandboxes` — which is user-invoked only, so
    tell them to run `/clean-up-sandboxes` rather than sweeping yourself.
 
-3. **Stop the asset watcher.** It holds the worktree dir open, so kill it before
-   removing anything.
-   - If this session started it, stop that background task.
-   - Otherwise find and kill the `npm run dev` / vite process for this worktree,
-     e.g. `pkill -f '<absolute worktree path>'` (scope it to the worktree path so
+3. **Stop the asset watchers.** They hold the worktree dir open, so kill them
+   before removing anything.
+   - If this session started them, stop those background tasks (both
+     `npm run dev` and `npm run frontend-dev`).
+   - Otherwise find and kill the vite processes for this worktree, e.g.
+     `pkill -f '<absolute worktree path>'` (scope it to the worktree path so
      you don't kill a watcher from another sandbox).
 
 4. **Remove the sandbox site** (`rm` is aliased to `trash`):
@@ -154,8 +159,9 @@ discover it.
 ## Subagent brief: spin up the sandbox site
 
 Everything below is for the subagent. Work by absolute path — **do not call
-EnterWorktree or ExitWorktree**, and **do not start `npm run dev`**; the parent
-session owns the watcher so it outlives you.
+EnterWorktree or ExitWorktree**, and **do not start `npm run dev` or
+`npm run frontend-dev`**; the parent session owns the watchers so they outlive
+you.
 
 1. Make sure the checkout's dependencies are installed (`statamic-pr` may have
    done this already):
