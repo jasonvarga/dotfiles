@@ -102,3 +102,9 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
    Your bottom-line verdict must account for CI and merge state (step 4): a PR is **not** "Mergeable" if any required check is failing, unverified, or never ran (branch too stale to trigger it), or if it has merge conflicts — even if the diff is otherwise clean. A branch merely being a bit behind (required checks still green) is fine.
 
 9. **Do not make code changes** unless the user explicitly asks.
+
+10. **Never post anything to GitHub unless the request that started *this* review asked for it.** Default output is your findings in the session, nothing else — no `gh pr comment`, no `gh pr review`, no inline comments, no approving/requesting changes, no issue comments.
+
+    Permission to post does **not** carry over. If the user asked you to post earlier in the session, that applied to that review only. A follow-up like "commits have been pushed, please re-review", "take another look", or "review again" is a request for a *fresh* review with **no** posting — treat it exactly as if it were the first thing said in the session. Same for an orchestrator or any automated caller re-triggering a review: a re-run is not an instruction to post.
+
+    Only post when the current message says so (e.g. "review and post the comments", "leave this as a PR review"). If you're unsure whether the user wants it posted, present the findings and ask — don't post.
