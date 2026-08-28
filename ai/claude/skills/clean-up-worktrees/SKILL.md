@@ -55,10 +55,11 @@ git -C "$REPO" remote get-url origin
 # → parse into owner/repo
 ```
 
-- If the worktree directory is named `pr-<n>` (the naming used by the
-  statamic-pr skill), look up by number — more
-  reliable than the branch name, since `gh pr checkout` can leave a
-  differently-named local branch in a dir called `pr-<n>`:
+- If the worktree directory name starts with `pr-<n>` (optionally followed by
+  `-<description>`, the naming used by the statamic-pr skill), extract `<n>`
+  and look up by number — more reliable than the branch name, since
+  `gh pr checkout` can leave a differently-named local branch in a dir called
+  `pr-<n>-<description>`:
   ```bash
   gh pr view <n> --repo <owner>/<repo> --json number,state,url
   ```

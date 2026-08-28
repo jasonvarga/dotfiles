@@ -85,11 +85,11 @@ way.
   ```bash
   git -C "$WORKTREE_PATH" rev-parse --abbrev-ref HEAD
   ```
-  Also check if the worktree directory is named `pr-<n>` (the naming used by
-  the statamic-pr skill). If so, prefer looking up the PR
-  directly by number in step 2e — it's more reliable than the branch name,
-  since `gh pr checkout` can leave a differently-named local branch in a
-  dir called `pr-<n>`.
+  Also check if the worktree directory name starts with `pr-<n>` (optionally
+  followed by `-<description>`, the naming used by the statamic-pr skill). If
+  so, extract `<n>` and prefer looking up the PR directly by number in step
+  2e — it's more reliable than the branch name, since `gh pr checkout` can
+  leave a differently-named local branch in a dir called `pr-<n>-<description>`.
 - **Main-repo case:** don't trust the repo's *current* branch — it may have
   moved on since this sandbox was built. Instead parse the branch out of the
   composer constraint that was recorded at spin-up time:
@@ -111,7 +111,7 @@ git -C "$CMS_REPO" remote get-url origin
 # → parse into owner/repo, e.g. statamic/cms
 ```
 
-- If the worktree directory is named `pr-<n>`, look up by number:
+- If the worktree directory name starts with `pr-<n>`, look up by number:
   ```bash
   gh pr view <n> --repo <owner>/<repo> --json number,state,url
   ```

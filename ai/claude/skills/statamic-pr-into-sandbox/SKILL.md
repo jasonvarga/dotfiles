@@ -43,7 +43,9 @@ Call **Agent** with `subagent_type: general-purpose` and
 >    created, using the branch name you read in phase 1.
 >
 > If phase 1 fails, stop and report that — don't spin up a sandbox against a
-> checkout that isn't ready. Report the combined fields from both briefs.
+> checkout that isn't ready. Report the combined fields from both briefs,
+> including the worktree directory name chosen in phase 1
+> (`pr-<n>-<description>`).
 
 If the subagent reports a failure, surface its reason and stop. A failed phase 2
 usually leaves a usable worktree — say so, so the user can retry the sandbox
@@ -52,7 +54,8 @@ alone with `statamic-sandbox`.
 ## 3. Enter the worktree
 
 The subagent's session is gone; this one still needs to move. Call
-**EnterWorktree** with `path: .claude/worktrees/pr-<n>`.
+**EnterWorktree** with the `path` the subagent reported (`.claude/worktrees/pr-<n>-<description>`)
+— don't guess it, the description is chosen by the subagent.
 
 ## 4. Start the asset watchers
 

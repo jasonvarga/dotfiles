@@ -55,7 +55,8 @@ don't retry blindly or paper over a half-created worktree.
 ## 4. Enter the worktree
 
 The subagent's session is gone; this one still needs to move. Call
-**EnterWorktree** with `path: .claude/worktrees/pr-<n>`.
+**EnterWorktree** with the `path` the subagent reported (`.claude/worktrees/pr-<n>-<description>`)
+— don't guess it, the description is chosen by the subagent.
 
 ## 5. Report
 
@@ -71,30 +72,38 @@ Everything below is for the subagent. Work by absolute path — **do not call
 EnterWorktree or ExitWorktree**, and do not start an asset watcher; the parent
 session handles both.
 
-1. Get the default branch and make sure it's current:
+1. Get the PR title and default branch, and make sure the default branch is
+   current:
    ```bash
+   gh pr view <n> --json title -q .title
    DEFAULT=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)   # e.g. 6.x
    git -C <repo> fetch origin "$DEFAULT"
    ```
-2. Create a detached worktree from the default branch:
+2. Turn the title into a short slug: strip a leading bracketed tag like
+   `[6.x]`, lowercase it, keep roughly the first 2-4 meaningful words, and
+   hyphenate them (drop filler words like "a", "the", "for"). This only needs
+   to be recognizable at a glance, not a full restatement of the title — e.g.
+   `Add dashboard widgets for site health` → `dashboard-widgets`.
+3. Create a detached worktree from the default branch, named `pr-<n>-<slug>`:
    ```bash
-   git -C <repo> worktree add --detach .claude/worktrees/pr-<n> "origin/$DEFAULT"
+   git -C <repo> worktree add --detach .claude/worktrees/pr-<n>-<slug> "origin/$DEFAULT"
    ```
-   Keep the `pr-<n>` directory name — the `clean-up-sandboxes` and
-   `clean-up-worktrees` skills use it to look the PR up later.
-3. Check the PR out from inside the worktree. `gh` has no `-C`, so cd for this
+   Keep the `pr-<n>-<slug>` naming — the `clean-up-sandboxes` and
+   `clean-up-worktrees` skills parse the `pr-<n>` prefix to look the PR up
+   later; everything after the PR number is just for human recognition.
+4. Check the PR out from inside the worktree. `gh` has no `-C`, so cd for this
    one; it handles fork remotes correctly, which a manual fetch wouldn't:
    ```bash
-   cd <repo>/.claude/worktrees/pr-<n> && gh pr checkout <n>
+   cd <repo>/.claude/worktrees/pr-<n>-<slug> && gh pr checkout <n>
    ```
    This fetches the PR head, sets up the branch (and fork remote if needed), and
    switches to it — no longer detached.
-4. Read the resulting branch name — `gh pr checkout` may not name it after the
+5. Read the resulting branch name — `gh pr checkout` may not name it after the
    directory:
    ```bash
    git -C <worktree> rev-parse --abbrev-ref HEAD
    ```
-5. Install dependencies. A worktree is a separate working dir and `vendor/` /
+6. Install dependencies. A worktree is a separate working dir and `vendor/` /
    `node_modules/` aren't in git, so nothing works until these finish:
    ```bash
    composer install -d <worktree>
@@ -108,6 +117,6 @@ Report back, and nothing else:
 - **Status** — succeeded, or which step failed and why (include the relevant
   error lines, not the full output).
 - **PR** — number and title.
-- **Branch** — the name from step 4.
-- **Worktree** — absolute path.
+- **Branch** — the name from step 5.
+- **Worktree** — absolute path (directory named `pr-<n>-<slug>`).
 - **Deps** — whether `composer install` and `npm ci` both succeeded.
