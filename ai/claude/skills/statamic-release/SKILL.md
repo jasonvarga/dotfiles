@@ -176,7 +176,25 @@ git ls-remote --heads origin release
 If it's still there, tell the user and ask before deleting it — don't delete a
 remote branch unprompted.
 
-## 6. Report
+## 6. Kick off documentation (minor releases only)
+
+Only for a minor release (`vX.Y.0`). Patch releases (`vX.Y.Z`, Z > 0) don't
+get documented — skip this step entirely for those.
+
+Use Solo MCP to run the **`document-release`** skill in the `docs` project:
+
+1. `mcp__solo__list_projects` — find the project named `docs`.
+2. `mcp__solo__list_agent_tools` — resolve the `Claude` runtime's id.
+3. `mcp__solo__spawn_agent` scoped to the `docs` project
+   (`project_id` from step 1, `agent_tool_id` from step 2), named
+   `"<version>: document-release"`.
+4. `mcp__solo__send_input` to that agent with `/document-release`.
+
+Don't wait for it to finish — it does its own research, commits, and opens a
+PR independently. Just confirm the agent spawned and started.
+
+## 7. Report
 
 Version released, that the workflow succeeded, branch deleted, tag now local,
-and which branch they're on now.
+and which branch they're on now. If it was a minor release, note that the
+`document-release` agent was kicked off in the `docs` project.
