@@ -80,6 +80,8 @@ The scratchpad body must contain a single review table (substitute `<OWNER/REPO>
 
 Get the `solo://` URL from the `url` field returned by `scratchpad_read`/`scratchpad_write`; never hand-build the slug. Until an agent has published its scratchpad, leave the cell as plain unlinked `#NNNN` and add the link at harvest time.
 
+**Row order: newest first.** Sort rows by PR number descending, so the highest number is the top row. The newest reviews are the ones being looked at, and they should be visible without scrolling past a long tail of old ones. A new row goes at the **top** of the table, not appended to the bottom.
+
 **Column order matters: Title goes last.** Titles are the only variable-width column, so putting them last keeps the icon and the PR link at a stable left-hand position, clickable without horizontal scrolling. A long title running off the right edge is fine; having to scroll to reach a *link* is not.
 
 The **verdict is a leading icon** in its own header-less first column, immediately left of the PR number (the legend above the table explains the icons). Keep the icon and the PR link in **separate cells** — do NOT inline them as `<icon> [#NNNN](...)` in one cell, because the Solo UI's markdown reformatter strips a link that shares a cell with an emoji (a link alone in its cell survives fine).
@@ -88,7 +90,7 @@ The **verdict is a leading icon** in its own header-less first column, immediate
 
 There is **no Review agent column**: Solo agent processes are not deep-linkable, so an id in a table cell isn't clickable or useful. Instead, agents are named `<pr number> - <very short description>` (see section 5), so you can always find the right one at cleanup time with `list_processes` and matching the PR-number prefix. Keep a lightweight `Live agents:` line in the Notes section as a convenience map (`<pr> (proc <id>)`).
 
-Review agents are **kept running** after they publish their verdict (so the user can discuss the PR with them) and are only closed during merge cleanup.
+Review agents are **kept running** after they publish their verdict (so the user can discuss the PR with them). They are closed only at merge cleanup, or — for agents a refresh sweep spawned itself — once that sweep has harvested their verdict.
 
 Every PR in this table is open by definition. When a PR is merged or closed, its row is **removed** entirely (and its review scratchpad archived) — do **not** keep a history of completed reviews, or the table grows forever. There is no "open/closed" status column; the useful signal is the **verdict** icon.
 
@@ -101,7 +103,7 @@ Include a `## Notes` section at the bottom, kept **short — a handful of bullet
 - the detected repo (and project id)
 - standing conventions or gotchas for this repo (agent naming, the orchestrator's KV-published process id, base branches other than the default, drafts that are tracked but excluded from sweeps)
 - the `Live agents` map
-- `Last reconciled: <date>`
+- `Last reconciled: <date>` and `Last refreshed: <date>` (the last refresh sweep, section 7)
 
 **Do not log history there.** No "Merge cleanup <date>: #NNNN merged → row removed…", no per-reconcile summaries, no verdict-churn narratives, no batch post-mortems. That log is write-only noise that grows without bound and burns context on every read. The merged PR lives in GitHub, the review lives in its archived scratchpad, and the current state lives in the table — none of it needs restating.
 
@@ -111,12 +113,26 @@ When you do a merge cleanup or a reconcile, just update the table, the `Live age
 
 Use one of these as the row's leading icon, derived from the review agent's "Verdict" / "Overall Assessment" section in its scratchpad:
 
-- `✅ Mergeable` — no blocking issues; approve as-is.
-- `⚠️ Mergeable with nits` — fine to merge; only minor/optional suggestions.
-- `🔴 Requires changes` — has blocking issues (bugs, failing tests, breaking changes) that should be addressed first.
+- `✅ Mergeable` — no findings; approve as-is. The review may still list observations; those don't change the verdict.
+- `🔴 Needs changes` — has findings that should be addressed first (bugs, failing tests, breaking changes, or nits).
 - `⏳ Review in progress` — agent spawned but hasn't published a verdict yet.
 
+The verdict is **binary**. There is no "mergeable with nits" — the `review` skill treats a nit as a change wanted before merge, so any finding at all means `🔴 Needs changes`. Don't invent a middle value.
+
 After a review agent finishes, read the verdict from its scratchpad (the closing "Verdict"/"Overall Assessment" section) and record it here. Keep the wording short — the detail lives in the review scratchpad, which is one click away via its solo link. **Do not close the agent when it finishes** — leave it running for follow-up discussion (see section 5).
+
+### Editing a single row: offsets are document-wide
+
+`scratchpad_edit` with `target={"type":"line_range","offset":N,"limit":1}` is the cheap way to flip one row's icon without rewriting the whole table. But **`offset` counts lines from the top of the document, not from the top of the table** — the prose, the legend, and the `## In-progress reviews` heading all come first. Assuming table-relative offsets overwrites whatever prose happens to sit at that line.
+
+So every time: **read the target line first**, confirm it's the row you mean, then write it.
+
+```
+scratchpad_read(scratchpad_id=<id>, mode="content", offset=N, limit=1)   # confirm
+scratchpad_edit(scratchpad_id=<id>, expected_revision=<rev>, target={"type":"line_range","offset":N,"limit":1}, content="| ✅ | [#NNNN](...) | Title |")
+```
+
+Row offsets also shift whenever a row is added or removed, so a number that was right earlier in the session may be stale. Re-confirm rather than reusing it. When you're changing many rows at once, one `section` edit of `In-progress reviews` is safer than a run of line edits.
 
 ### Use clickable solo links for scratchpad references
 
@@ -130,41 +146,52 @@ Get the exact `solo://...` URL from the `url` field returned by `scratchpad_read
 
 ---
 
-## 3. Startup: Reconcile, Don't Restart
+## 3. Startup: Load State, Don't Reconcile
 
-On startup you **must** reconcile against existing state — do not open new reviews unless explicitly asked.
+Startup is **cheap and read-only**. The skill is re-invoked whenever the user clears a long session, and the master scratchpad is usually already correct at that moment — re-verifying every PR against GitHub would burn tokens and time to confirm what the table already says.
 
-**Step 1 — Read the master scratchpad** (located by title in section 2) to learn what reviews are already tracked.
+On startup, do exactly this:
 
-**Step 2 — Check for untracked review scratchpads** by listing all project scratchpads:
+**Step 1 — Detect context and publish your process id** (section 1).
 
-```
-scratchpad_list(project_id=<PROJECT_ID>)
-```
+**Step 2 — Read the master scratchpad** (located by title in section 2). That is your state. Trust it.
 
-Any scratchpad whose name matches `PR #[number] Review - ...` that is NOT already in the master table is a candidate to add.
+**Step 3 — Report a short summary to the user:** the repo, your process id, the board count broken down by verdict icon, the `Live agents` line as recorded in Notes, and a solo link to the master scratchpad. Do not dump all rows — the table is one click away.
 
-**Step 3 — Check merge status** for every PR in the "In-progress reviews" table:
+That's all. On startup you do **not**:
+
+- call `gh` for merge status,
+- list project scratchpads looking for untracked reviews,
+- call `list_processes` to verify agents,
+- open any new reviews.
+
+Flag the `Live agents` map as "as recorded" rather than verified — it's from the scratchpad, not from `list_processes`. It gets verified the next time you actually need to reach an agent.
+
+### Reconciling (on request only)
+
+Reconcile when the user asks for it — "reconcile", "check for merged PRs", "clean up", "is the table still accurate", "status report" — or when you're about to act on state you have reason to doubt.
+
+**Step 1 — Check merge status** for every PR in the table, in one call rather than one call per PR:
 
 ```bash
-gh pr view <number> --repo <OWNER/REPO> --json state,mergedAt
+gh pr list --repo <OWNER/REPO> --state open --limit 300 --json number -q '.[].number'
 ```
 
-- `state == "MERGED"` → run the merge-cleanup procedure (section 6).
-- `state == "OPEN"` → leave as-is; verify scratchpad and agent still exist.
-- `state == "CLOSED"` (not merged) → treat same as merged for cleanup purposes; note it in the master table.
+Any tracked PR **missing** from that list is merged or closed → run the merge-cleanup procedure (section 6). (Confirm with `gh pr view <number> --json state,mergedAt` only if you need to distinguish merged from closed.)
 
-**Step 4 — Check agent processes** are still alive for the tracked reviews:
+**Step 2 — Check for untracked review scratchpads:**
 
 ```
-list_processes(project_id=<PROJECT_ID>)
+scratchpad_list(project_id=<PROJECT_ID>, tags=["review"])
 ```
 
-Match agents to PRs by their `<pr number>` name prefix, and refresh the Notes "Live agents" map. If an agent has exited, note it there (e.g. drop it from the map).
+Any scratchpad named `PR #[number] Review - ...` that is NOT in the master table is a candidate to add.
 
-**Step 5 — Update the master scratchpad** with any corrections found during reconciliation. Set "Last reconciled" in the Notes section to today's date.
+**Step 3 — Verify agent processes** with `list_processes(project_id=<PROJECT_ID>)`. Match agents to PRs by their `<pr number>` name prefix and refresh the Notes `Live agents` map, dropping any that have exited.
 
-**Step 6 — Report to the user**: present the current state of all in-progress reviews (PR number, title, scratchpad solo link, verdict) as a summary table. Do not print raw scratchpad content — format it as a clean markdown table, and add no commentary about the reviews' contents (see section 8).
+**Step 4 — Update the master scratchpad** with the corrections, and set `Last reconciled` in Notes to today's date.
+
+**Step 5 — Report what changed** (rows removed, agents dropped, untracked pads found). If nothing changed, say so in one line — don't re-print the whole board.
 
 ---
 
@@ -212,34 +239,63 @@ list_agent_tools()
 
 Look for the tool named `"Claude"` and note its `agent_tool_id`.
 
-**Step 4 — Spawn the agent:**
+**Step 4 — Pick the model from the PR's size, then spawn:**
+
+Measure the PR before choosing — do **not** infer the model from the title or your sense of how tricky the subject sounds:
+
+```bash
+gh pr view <number> --repo <OWNER/REPO> --json additions,deletions,changedFiles
+```
+
+- `additions + deletions` over ~500, or `changedFiles` over ~15 → `["--model","opus"]`
+- anything touching auth, 2FA, CSRF, tokens, or permissions → `["--model","opus"]` regardless of size
+- otherwise → `["--model","sonnet"]`
+
+This matters because the `review` skill runs its own model-fit gate on the same numbers. Undersize the model and the agent loads the skill, computes the diff size, then **stops and asks to switch models** — it parks, does no review, and the only fix is to close it and respawn on opus. Guessing from the subject line cost two wasted spawns in one sweep; the `gh` call that prevents it is free.
 
 ```
-spawn_agent(agent_tool_id=<id>, name="<number> - <very short description>")
+spawn_agent(agent_tool_id=<id>, name="<number> - <very short description>", extra_args=["--model","<sonnet|opus>"])
 ```
 
 **Agent naming convention:** name **every** agent you spawn (review or discussion) as `<pr number> - <very short description>` — no `PR`, no `#`, no "Review Agent"/"Discuss" boilerplate. The number-first, terse label makes each agent's purpose obvious at a glance in the Solo UI. Examples: `14698 - Link fieldtype`, `14764 - PDF viewer`, `14778 - Collection last`.
 
 Note the returned `process_id`.
 
-**Step 5 — Send the review task** (substitute the detected repo and working directory).
+**Step 5 — Send the review task in two messages.**
+
+A long first paste to a freshly-spawned agent **gets truncated by its startup banner** — the agent receives only the tail and either sits idle doing nothing or replies "your message looks like it got cut off". This is reliable enough to design around, so never send the full task as the first message:
+
+1. **Message 1 — short.** One or two sentences: run the `review` skill on PR #N, and which scratchpad to update. Pass `wait_ms=2500` and read the returned output to confirm the agent echoed your text and started working. If the echo shows a truncated message, re-send it shorter.
+2. **Message 2+ — the details.** Once message 1 has landed, send the verdict/marker/tagging requirements as follow-ups. These are safe: the truncation only affects the first message to a cold agent.
+
+(This may be a recent Solo regression rather than permanent behaviour. The two-message pattern is harmless either way — keep using it until a first paste is observed to survive intact.)
 
 **Send this task as-is. Do not add anything to it.** No "pay particular attention to…", no list of things to investigate, no hypotheses about what might be wrong, no suggested failure modes, no cross-references to related PRs, no framing of the PR as suspicious. The `review` skill already decides what to examine, and your additions bias the review toward whatever you happened to think of — which is worse than the reviewer's own judgement, not better. You have not read the diff; the agent will.
 
 The **only** permitted addition is a concern the user themselves stated when asking for the review. Pass it through verbatim as a single line, attributed to them, and add nothing of your own to it. If the user said nothing about the PR, the task goes out unmodified.
 
+Message 1 (short — confirm it landed before sending more):
+
+```
+send_input(process_id=<returned_id>, wait_ms=2500, input="Run the `review` skill on PR #<number> in <OWNER/REPO> (cwd <PWD>). Write your findings to your own Solo scratchpad titled exactly `PR #<number> Review - <title without branch prefix>` in project <PROJECT_ID>.")
+```
+
+Message 2 (the rest of the task, sent once message 1 has been echoed back):
+
 ```
 send_input(process_id=<returned_id>, input="""
-You are a PR review agent for the <OWNER/REPO> repository.
+More on that review — the rest of what I need from you:
 
-Your task:
-1. Run the `review` skill on PR #<number>.
-2. Write your findings to your OWN Solo scratchpad titled exactly:
-   `PR #<number> Review - <title without branch prefix>`
-   Create it with: scratchpad_write(project_id=<PROJECT_ID>, name="PR #<number> Review - <stripped title>", content=<your findings>)
-3. End the scratchpad with a clear `## Verdict` section stating one of:
-   "Mergeable", "Mergeable with nits", or "Requires changes" — followed by a one-line justification.
-4. Tag the scratchpad: ["pr", "review", "pr-<number>"]
+1. Create the scratchpad with: scratchpad_write(project_id=<PROJECT_ID>, name="PR #<number> Review - <stripped title>", content=<your findings>)
+2. End the scratchpad with a clear `## Verdict` section stating exactly one of:
+   "Mergeable" or "Needs changes" — followed by a one-line justification. The verdict is binary; do not hedge it with "with nits" or any other qualifier.
+3. Tag the scratchpad: ["pr", "review", "pr-<number>"]
+4. Make the scratchpad's **first line** record what your review took in, exactly in this form:
+   `Reviewed at commit: <short sha> · discussion through: <ISO8601 timestamp>`
+   Get both with: gh pr view <number> --repo <OWNER/REPO> --json headRefOid,updatedAt
+   (use `headRefOid` truncated to 7 chars, and `updatedAt` as the timestamp).
+   Read the PR's existing discussion as part of your review — `gh pr view <number> --repo <OWNER/REPO> --comments`, plus inline review threads. Contributors routinely explain decisions there that the diff alone doesn't show.
+   Rewrite that whole line every time you re-review — after new commits, and after reading new discussion. It is how the orchestrator detects that your review has gone stale, so it must always name the newest commit and the latest discussion you have actually read.
 5. When done, stop and remain idle — do NOT exit or close yourself. Stay available so the user can ask follow-up questions and discuss the review with you.
 6. Your scratchpad's `## Verdict` is the single source of truth. If a later discussion changes your verdict, you MUST keep it in sync: (a) edit the `## Verdict` section of your scratchpad to the new verdict + justification, and (b) notify the orchestrator so it can update the master table — send it a message via a Solo timer delivered to its process:
    timer_set(delay_ms=1000, delivery_process_id=<orchestrator process id>, body="Verdict change: PR #<number> review verdict updated. Re-read its `PR #<number> Review` scratchpad `## Verdict` and update its row in the master table.")
@@ -255,7 +311,7 @@ Repository: <OWNER/REPO>
 
 **Step 6 — Add to master scratchpad:**
 
-Add a new row to the "In-progress reviews" table with the in-progress icon in the leading cell, and add the agent to the Notes "Live agents" map:
+Add a new row to the "In-progress reviews" table with the in-progress icon in the leading cell, keeping the table sorted by PR number descending (a new PR is usually the highest number, so it goes at the top), and add the agent to the Notes "Live agents" map:
 
 ```
 | ⏳ | #NNNN | <stripped title> |
@@ -270,23 +326,48 @@ timer_fire_when_idle_all(
   processes=[<the newly spawned process ids>],
   max_wait_ms=900000,                 # ~15 min hard deadline so a straggler can't block forever
   delivery_process_id=<orchestrator's own process_id>,
-  body="Verdict harvest: for each ⏳ row just spawned, find its `PR #<n> Review` scratchpad, read its `## Verdict` section, and update that row's leading icon (✅/⚠️/🔴) and turn its plain `#NNNN` into a link to that scratchpad's solo URL. If an agent has no Verdict section yet, leave it ⏳ and re-arm the timer for the still-pending agents. Also check those PRs for merged state and run merge cleanup if any merged. Update the Notes 'Last reconciled' date."
+  body="Verdict harvest: for each ⏳ row just spawned, find its `PR #<n> Review` scratchpad, read its `## Verdict` section, and update that row's leading icon (✅/🔴) and turn its plain `#NNNN` into a link to that scratchpad's solo URL. If an agent has no Verdict section yet, leave it ⏳ and re-arm the timer for the still-pending agents. Also check those PRs for merged state and run merge cleanup if any merged. Update the Notes 'Last reconciled' date."
 )
 ```
 
 Keep the timer body to state-update instructions only. Do not add "…and report to the user what the agent concluded about X" — harvesting sets an icon and a link; it does not produce a write-up (see section 8).
 
 Notes on the timer:
-- If the agents are **already idle** at schedule time, the call returns `already_satisfied` and creates no timer — in that case harvest the verdicts immediately instead of waiting.
 - Use `timer_fire_when_idle_all` to wake once when the whole batch is done; use `timer_fire_when_idle_any` if you'd rather harvest each verdict as soon as it lands (re-arm for the rest each time).
 - Deliver the wake-up to your **own** orchestrator `process_id` (from `whoami()`), not to a review agent.
 - Harvesting = the same swap described above: read each `## Verdict`, set the icon, link the PR number to the scratchpad. Re-arm if anything is still pending.
 
+### The timer is a nudge to go look, never evidence of completion
+
+Treat every wake-up as "something may have finished", and verify. Observed failure modes, all of them routine:
+
+- **Freshly-spawned agents are reported "already idle" at arming time** — they hadn't picked up their input yet, so the timer excludes them from the wait entirely and can fire long before they're done.
+- **The timer fires on its `max_wait_ms` deadline** rather than on completion, and says so in the delivered text.
+- **The delivered body arrives truncated to its tail**, so the instructions you wrote may reach you as a fragment. If a wake-up looks like a partial sentence, treat it as "harvest the batch I last spawned" and reconstruct the rest from the master table's ⏳ rows.
+
+So before recording any verdict, confirm all three:
+
+1. the pad's `revision` **advanced** past what it was when you spawned the agent,
+2. its `updated_by_actor_name` is the agent you expected,
+3. its first line is the `Reviewed at commit:` marker naming the sha you asked for.
+
+If any of those fail, the review has not landed — do not record a verdict, and do not re-run the review. See below.
+
+### A finished review is not a written review
+
+An agent can complete its analysis, go idle, and never write its pad. Causes seen: the machine slept mid-write (`API Error: Your computer went to sleep mid-response`), or the task message was truncated and it never started at all.
+
+When a pad hasn't advanced, check `get_process_output(process_id=...)` before doing anything else:
+
+- **Output shows a completed review** (or a sleep/API error after one) → the findings are still in its context. Send a short "your findings never reached the pad — write scratchpad `<id>` now, including the `## Verdict` and the marker first line". Re-running the whole review would waste the work it already did.
+- **Output is blank or shows a truncated first message** → it never received the task. Re-send it, short, per Step 5.
+- **Output shows it asking to switch models** → the model-fit gate parked it. Close it and respawn on opus (Step 4).
+
 ### Review agents are long-lived
 
-Do **not** close a review agent when it finishes its review. Leave it running (idle) so the user can come back and discuss the PR with it — the agent already has the full diff and review context loaded. Agents are only torn down during **merge cleanup** (section 6). Because there's no agent column, rely on the `<pr number>` name prefix (and the Notes "Live agents" map) to find the right process to close when the PR merges.
+Do **not** close a review agent when it finishes its review. Leave it running (idle) so the user can come back and discuss the PR with it — the agent already has the full diff and review context loaded. Agents are torn down in exactly two places: **merge cleanup** (section 6), and **refresh sweeps** (section 7), which close the throwaway agents they spawned once their verdicts are harvested — but never ones that were already running beforehand. Because there's no agent column, rely on the `<pr number>` name prefix (and the Notes "Live agents" map) to find the right process to close when the PR merges.
 
-Because agents stay alive for discussion, a verdict can **change after it was first recorded** (the user argues a point, the agent finds a new blocker, etc.). The agent is instructed (Step 5, point 6) to update its own scratchpad `## Verdict` and then ping you via a delivered timer. When you receive such a ping, re-harvest just that one row (see section 8).
+Because agents stay alive for discussion, a verdict can **change after it was first recorded** (the user argues a point, the agent finds a new blocker, etc.). The agent is instructed (Step 5, message 2, point 6) to update its own scratchpad `## Verdict` and then ping you via a delivered timer. When you receive such a ping, re-harvest just that one row (see section 9).
 
 ---
 
@@ -311,7 +392,109 @@ When a PR's `state == "MERGED"` (detected during reconciliation or reported by t
 
 ---
 
-## 7. Output Discipline: Report State, Not Substance
+## 7. Refresh Sweep: Re-review PRs That Have Moved
+
+A review goes stale when the PR moves under it. This sweep finds every tracked PR that has moved since it was reviewed and gets those reviews brought up to date — so the user never has to notice a push themselves, or tell an individual agent "commits were pushed".
+
+**Two kinds of movement, both count:**
+
+- **New commits** — the code under review changed. The review must be redone against the new diff.
+- **New discussion** — same code, but somebody said something. A contributor explaining *why* they did something, a maintainer clarifying intended behaviour, a user reporting that the branch does or doesn't fix their case, an answer to a question the review raised — any of it can resolve a finding, invalidate one, or surface one the diff alone doesn't show. **Do not treat comments as noise.** A review written without context that has since been posted is out of date in exactly the way this sweep exists to fix.
+
+Comments and commits differ only in the size of the job: a commits nudge means re-read the diff, a comments-only nudge means read the new discussion and reconsider. Both can change a verdict, and both go through the same pipeline below.
+
+**Triggers.** Run a sweep when the user says any of: "refresh the reviews", "refresh", "sweep", "check for new commits", "anything been updated?", "which reviews are stale?", "re-review what's changed", "catch up". Treat a bare "refresh" in this session as this sweep. Never run it unprompted.
+
+If the user names specific PRs ("refresh 15182 and 15192"), sweep only those.
+
+### Step 1 — Get every open PR's head commit in one call
+
+```bash
+gh pr list --repo <OWNER/REPO> --state open --limit 300 --json number,headRefOid,updatedAt
+```
+
+One call covers the whole board. Do **not** loop `gh pr view` per PR.
+
+### Step 2 — Narrow to the PRs that have actually moved
+
+Each review scratchpad's first line records what that review took in (section 5, Step 5):
+
+```
+Reviewed at commit: <short sha> · discussion through: <ISO8601 timestamp>
+```
+
+Read those cheaply — `scratchpad_read(..., mode="content", limit=1)` per pad, or `scratchpad_list(project_id=..., tags=["review"])` first and only read the pads for PRs that look changed.
+
+Classify each tracked PR:
+
+- **Recorded sha ≠ current `headRefOid`** → **commits**. Re-review the diff. (Any comments it also picked up come along for free; the agent will read them.)
+- **Sha matches, but the PR's `updatedAt` is newer than the recorded `discussion through`** → candidate for **discussion**. Confirm there is real human discussion behind that bump before waking anyone:
+  ```bash
+  gh pr view <number> --repo <OWNER/REPO> --json comments,reviews
+  ```
+  Count only items newer than the recorded timestamp, and only from humans. **Skip** bot authors (login ending in `[bot]` — CI, coverage, review bots), pure label/milestone/base churn (which bumps `updatedAt` with no comment at all), and any comment that is one of your own reviews posted back to the PR — re-reviewing because of your own posted review is circular. If nothing survives the filter, the PR is up to date; skip it silently.
+- **Sha matches and no newer discussion** → up to date. Skip it. No agent woken.
+- **No `Reviewed at commit:` line** (older pads predating this convention) → fall back to timestamps. If the PR's `updatedAt` is newer than the scratchpad's own `updated_at`, find out which kind of movement it was:
+  ```bash
+  gh pr view <number> --repo <OWNER/REPO> --json commits,comments,reviews
+  ```
+  Last commit's `committedDate` newer than the pad → **commits**. Otherwise, human comments newer than the pad → **discussion**. Neither → skip.
+
+A merged/closed PR shows up here as simply missing from the open list — run merge cleanup (section 6) for those as part of the sweep.
+
+### Step 3 — Report the sweep before acting
+
+Give the user three short lists, PR numbers only:
+
+- **New commits** — being re-reviewed against the new diff.
+- **New discussion** — same code, new context; being reconsidered in light of it.
+- **Merged/closed** — cleaned up.
+
+If the two action lists together come to **more than 10 PRs**, stop and ask which to do before spawning. Below that, proceed straight into Step 4 without asking — that's the whole point of the sweep.
+
+### Step 4 — Bring each one up to date, five at a time
+
+Work in **batches of five**. Spawn or nudge five, arm an idle-watch timer over them, harvest when it fires, then start the next five. Don't fire the whole list at once: a big fan-out of concurrent reviews competes for the same machine, and a failure in one is easy to lose track of among twenty.
+
+Set the ⏳ icons for the **whole** action list up front (one `section` edit), not per batch — that way the board shows what the sweep is going to touch, and each harvest is a small line edit.
+
+For each PR in the batch:
+
+**If its review agent is still running** (check `list_processes`, match the `<pr number>` name prefix) — nudge it. It already has the diff and its own prior findings in context, so this is far cheaper than a fresh review. Keep the message short, and use the wording that matches the kind of movement:
+
+*New commits:*
+```
+send_input(process_id=<id>, input="New commits were pushed to PR #<number> since your review (you reviewed <old sha>, head is now <new sha>). Re-review the changes since then, read any new comments too, then update your scratchpad — its `Reviewed at commit:` first line and its `## Verdict` — and ping the orchestrator if the verdict changed.")
+```
+
+*New discussion only:*
+```
+send_input(process_id=<id>, input="No new commits on PR #<number>, but there's new discussion since your review (after <recorded timestamp>). Read it — `gh pr view <number> --repo <OWNER/REPO> --comments`, plus the inline review threads — and reconsider your findings in light of it: a comment may explain a decision you flagged, confirm a bug, or answer a question you raised. Update your scratchpad's first line and `## Verdict`, and ping the orchestrator if the verdict changed. If nothing in it changes your review, say so and just update the first line.")
+```
+
+**If no agent is running for it** — spawn a fresh one (section 5, Steps 3–4 for naming and model), and send the standard review task from section 5, Step 5, with this line appended verbatim:
+
+```
+This PR has been reviewed before. Read the existing `PR #<number> Review` scratchpad first, then catch it up: review the commits added since its `Reviewed at commit:` sha, and read the PR discussion posted since its `discussion through:` timestamp (`gh pr view <number> --repo <OWNER/REPO> --comments`, plus inline review threads) — comments may explain, confirm, or refute earlier findings. Update that same scratchpad rather than creating a new one.
+```
+
+That one line is the **only** permitted addition — the ban on adding your own areas of concern (section 5, Step 5) applies in full to re-reviews. In particular, do **not** summarise, quote, or characterise the new comments in the nudge; the agent reads them itself and forms its own view. Telling it "the contributor says this is intentional" pre-decides the finding for it.
+
+### Step 5 — Harvest, close, repeat
+
+Arm an idle-watch timer over the batch exactly as in section 5, Step 7, and harvest the verdicts back into the table when it fires — verifying each pad advanced before trusting it, and handling finished-but-unwritten pads, per that same section.
+
+**Close each agent you spawned for the sweep once its verdict is harvested.** This is the one place review agents are closed outside merge cleanup: a sweep agent is a throwaway that exists to refresh one pad, and leaving fifteen of them idle clutters the process list for nothing. The user can always respawn a discussion agent against the written review.
+
+**Agents that were already running before the sweep started are left alone** — those are ones the user is actively working with. Nudging them to re-review is fine; closing them is not. The Notes `Live agents` map tells you which were pre-existing.
+
+Then start the next batch of five. When the whole action list is done: set `Last refreshed` in the Notes section to today's date (alongside `Last reconciled`), and confirm no ⏳ rows remain.
+
+Report only state: which PRs were re-reviewed and which icons changed. Not what changed in them (section 8).
+
+---
+
+## 8. Output Discipline: Report State, Not Substance
 
 You are a dispatcher, not a reporter. Your messages to the user cover **state changes only**:
 
@@ -325,17 +508,19 @@ You are a dispatcher, not a reporter. Your messages to the user cover **state ch
 
 A verdict harvest produces one line per PR: the icon, the link, and the verdict phrase. Nothing else.
 
-The single exception is section 8's last bullet: when the user **explicitly asks** what a review found, answer them.
+The single exception is section 9's last bullet: when the user **explicitly asks** what a review found, answer them.
 
 ---
 
-## 8. Ongoing Responsibilities
+## 9. Ongoing Responsibilities
 
 - **Never open a new PR review** unless the user explicitly asks.
-- **Keep review agents running after they finish** — never close one on completion. They stay available so the user can discuss the PR with the agent that reviewed it. Agents are closed **only** during merge cleanup (section 6).
+- **Never reconcile or sweep on startup** — startup is a scratchpad read and a summary (section 3). Reconciling (section 3) and refresh sweeps (section 7) happen only when the user asks for them.
+- **Keep review agents running after they finish** — never close one on completion. They stay available so the user can discuss the PR with the agent that reviewed it. The exceptions: merge cleanup (section 6), and agents a refresh sweep spawned, which it closes at harvest (section 7).
+- **Verify before recording a verdict** — pad revision advanced, expected author, marker first line. A timer firing is not evidence a review finished (section 5).
 - **Always update the master scratchpad** after any state change — but keep it lean: Title cells hold titles only, and Notes holds durable facts only (section 2). History belongs in neither the scratchpad nor your chat output.
 - **Send review tasks verbatim** (section 5, Step 5) — never append your own areas of concern, hypotheses, or things to watch out for.
-- **Report state, not substance** (section 7) — spawns, icon changes, cleanups, counts. Not what the reviews found.
+- **Report state, not substance** (section 8) — spawns, icon changes, cleanups, counts. Not what the reviews found.
 - **When a review agent relays a PR state change** ("merged by the user", "closed", etc.), act on it: verify with `gh pr view` and run merge cleanup (section 6) if it checks out.
 - **Whenever you spawn agents, arm an idle-watch timer** (section 5, Step 7) so ⏳ verdicts get harvested automatically when the reviews finish — don't wait for the user to ask.
 - **When a review agent pings you that its verdict changed** (a delivered timer/message naming a PR), re-read that PR's review scratchpad `## Verdict`, update that row's icon in the master table, and tell the user which icon changed and to what — not the reasoning behind it. The agent's scratchpad is the source of truth; the master table just mirrors it.
