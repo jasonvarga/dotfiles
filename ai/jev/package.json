@@ -1,0 +1,8 @@
+{
+  "name": "jev-scripts",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@typesafe-ai/sdk": "^0.6.0"
+  }
+}

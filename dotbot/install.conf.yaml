@@ -37,6 +37,8 @@
     command: "brew bundle"
   - description: Cleaning up Homebrew
     command: "brew cleanup"
+  - description: Installing Jev script dependencies
+    command: "[ -x \"$(which npm)\" ] && npm --prefix ai/jev install || echo 'Skipped: npm not available yet (Herd installs node).'"
   - description: Clearing sudo credential cache
     command: "sudo --reset-timestamp"
   - description: Apply MacOS preferences

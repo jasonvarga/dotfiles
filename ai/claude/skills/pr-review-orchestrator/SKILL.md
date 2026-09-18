@@ -127,7 +127,7 @@ Each check earns its place:
 
 - **Name prefix, not just existence.** A stale key pointing at a different live process would otherwise send a re-review instruction to an unrelated agent, silently.
 - **`Running`, not merely resolvable.** Solo distinguishes *closed* from *stopped*; a stopped agent still resolves, with `pid: null`.
-- **Running still isn't working.** An agent can be Running and idle but parked — at the `review` skill's model-fit gate, or on a permission prompt. Only `get_process_output` shows this; check it when a nudge produces no pad revision bump.
+- **Running still isn't working.** An agent can be Running and idle but parked — at the `review` skill's model router, or on a permission prompt. Only `get_process_output` shows this; check it when a nudge produces no pad revision bump.
 - **A miss doesn't prove there's no agent.** The user may have spawned one themselves. Spawning anyway then puts **two agents on the same PR writing the same pad** — the worst failure in this flow, and invisible to KV. Only reconcile's `list_processes` pass catches it.
 - **Write back on every respawn**, or the next miss spawns yet another duplicate.
 
@@ -142,13 +142,13 @@ Include a `## Notes` section at the bottom, kept **short — a handful of bullet
 - the detected repo (and project id)
 - base branches other than the default, and which PRs target them
 - drafts that are tracked, and any excluded from sweeps
-- calibration data for this repo — e.g. which PRs have tripped the `review` skill's model-fit gate, and at what size
+- calibration data for this repo — e.g. PRs where `jev-review-model` picked a model that turned out wrong, and what the diff looked like
 - `Last reconciled: <date>` and `Last refreshed: <date>` (the last refresh sweep, section 7)
 
 **Where a new lesson goes.** When you learn something worth keeping, route it before you write it:
 
 - **True in any repo?** It belongs in *this skill* — edit the skill file. Mechanism behaviour (message truncation, timer reliability, tool quirks) is always this.
-- **Specific to this repo?** Notes — base branches, drafts, model-gate calibration against this repo's PR sizes.
+- **Specific to this repo?** Notes — base branches, drafts, model-router calibration against this repo's PRs.
 - **Prose that helps a human reading the pad in the Solo UI?** The pad's preamble — a line or two at most.
 
 Appending to the pad because it's already open, when the lesson is really a skill rule, is how Notes grows into a shadow skill. Resist it: the pad's copy silently wins over the skill's, because a session reads the pad first.
@@ -310,27 +310,41 @@ list_agent_tools()
 
 Look for the tool named `"Claude"` and note its `agent_tool_id`.
 
-**Step 4 — Pick the model from the PR's size, then spawn:**
+**Step 4 — Pick the model with the router, then spawn:**
 
 Measure the PR before choosing — do **not** infer the model from the title or your sense of how tricky the subject sounds:
+
+```bash
+gh pr diff <number> --repo <OWNER/REPO> | jev-review-model
+```
+
+**Pipe it exactly like that.** The diff travels through the pipe and never enters your context; all that comes back is a verdict and its signals. Do not fetch the diff into context first and do not hand it to a subagent — there is nothing to protect against.
+
+The first line is the recommendation:
+
+- `opus` → `extra_args=["--model","opus"]`
+- `sonnet` → `extra_args=["--model","sonnet"]`
+- `either` → `extra_args=["--model","sonnet"]`. The middle ground defaults to the cheaper model.
+
+**Name the chosen model to the agent in Step 5.** That is what lets it skip the model router instead of re-deriving the same answer: the `review` skill runs this identical command, so a second run is pure duplication — and because the judgements are probabilistic, a PR sitting on a threshold can land on either side of it across two calls and park the agent over nothing. The reasons under the recommendation are for your own calibration notes, not for the agent.
+
+**If the user named a model when asking for the review** — "review this one on opus", "use fable for this" — use it and skip the router entirely. A stated preference is not a hypothesis to check.
+
+**If `jev-review-model` is unavailable or errors** (no `TYPESAFE_API_KEY` in this environment, command not on `PATH`), fall back to size alone:
 
 ```bash
 gh pr view <number> --repo <OWNER/REPO> --json additions,deletions,changedFiles
 ```
 
-- `additions + deletions` over ~500, or `changedFiles` over ~15 → `["--model","opus"]`
-- anything touching auth, 2FA, CSRF, tokens, or permissions → `["--model","opus"]` regardless of size
-- otherwise → `["--model","sonnet"]`
+`additions + deletions` over ~500 or `changedFiles` over ~15 → opus, otherwise sonnet. On this path you must **not** tell the agent its model fit was checked — let it run the router itself, which is better informed than this fallback.
 
-This matters because the `review` skill runs its own model-fit gate on the same numbers. **The gate is bidirectional**: too small a model parks the agent, and so does too large a one — an oversized model gets asked to switch *down*. It also gates on *architectural* change, which size alone doesn't predict, and `gh`'s `additions + deletions` undercounts what the skill actually measures, so a PR near a threshold may read larger to the agent than to you.
-
-A parked agent can't be talked past the gate. It does no review and sits idle; the only fix is to close it and respawn on the model it asked for. Guessing the model from the subject line instead of measuring costs two spawns per mistake, and the `gh` call that prevents it is free. Record repo-specific near-misses in the master pad's Notes as calibration.
+That gate is bidirectional: too small a model parks the agent, and so does too large a one. A parked agent can't be talked past it — it does no review and sits idle, and the only fix is to close it and respawn on the model it asked for. Passing the router's verdict in Step 5 is what prevents this. Record repo-specific near-misses in the master pad's Notes as calibration.
 
 ```
 spawn_agent(
   agent_tool_id=<id>,
   name="<number> - <very short description>",
-  extra_args=["--model","<sonnet|opus>"],
+  extra_args=["--model","<the model from Step 4>"],
   include_agent_instructions=false,
 )
 ```
@@ -358,13 +372,19 @@ A long first paste to a freshly-spawned agent **gets truncated by its startup ba
 
 **Send this task as-is. Do not add anything to it.** No "pay particular attention to…", no list of things to investigate, no hypotheses about what might be wrong, no suggested failure modes, no cross-references to related PRs, no framing of the PR as suspicious. The `review` skill already decides what to examine, and your additions bias the review toward whatever you happened to think of — which is worse than the reviewer's own judgement, not better. You have not read the diff; the agent will.
 
+The model-fit clause in message 1 is part of the task, not an addition — it tells the agent which model it is on, nothing about what to look for.
+
 The **only** permitted addition is a concern the user themselves stated when asking for the review. Pass it through verbatim as a single line, attributed to them, and add nothing of your own to it. If the user said nothing about the PR, the task goes out unmodified.
 
 Message 1 (short — confirm it landed before sending more):
 
 ```
-send_input(process_id=<returned_id>, wait_ms=2500, input="Run the `review` skill on PR #<number> in <OWNER/REPO> (cwd <PWD>). Write your findings to your own Solo scratchpad titled exactly `PR #<number> Review - <title without branch prefix>` in project <PROJECT_ID>.")
+send_input(process_id=<returned_id>, wait_ms=2500, input="Run the `review` skill on PR #<number> in <OWNER/REPO> (cwd <PWD>). Use <model> for this review — the model fit is already decided, so skip the model router. Write your findings to your own Solo scratchpad titled exactly `PR #<number> Review - <title without branch prefix>` in project <PROJECT_ID>.")
 ```
+
+The model line must be in **message 1**, not message 2 — the agent reaches the router early, well before the follow-up lands. Keep it to the one clause shown; this message stays short for the truncation reason above. Naming the model is the whole mechanism: the `review` skill skips the router whenever it's told which model to use, and doesn't care who decided.
+
+The exception is the size-only fallback path, where the router never ran: **say nothing about the model at all** and let the agent run it itself, which is better informed than that fallback.
 
 Message 2 (the rest of the task, sent once message 1 has been echoed back):
 
@@ -451,7 +471,7 @@ When a pad hasn't advanced, check `get_process_output(process_id=...)` before do
 
 - **Output shows a completed review** (or a sleep/API error after one) → the findings are still in its context. Send a short "your findings never reached the pad — write scratchpad `<id>` now, including the `## Verdict` and the marker first line". Re-running the whole review would waste the work it already did.
 - **Output is blank or shows a truncated first message** → it never received the task. Re-send it, short, per Step 5.
-- **Output shows it asking to switch models** → the model-fit gate parked it. Close it and respawn on opus (Step 4).
+- **Output shows it asking to switch models** → the model router parked it, which means message 1 went out without naming a model (Step 5) or the router disagreed with the model you spawned. Close it and respawn on the model it asked for, naming it this time.
 
 ### Review agents are long-lived
 

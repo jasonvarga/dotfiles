@@ -1,0 +1,159 @@
+#!/usr/bin/env node
+
+import { noul, score, TypeSafeClient, TypeSafeError } from "@typesafe-ai/sdk";
+
+const STATE_CHAR_BUDGET = 80_000;
+
+const NOISE = /(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|composer\.lock|Cargo\.lock|go\.sum)$|(^|\/)(dist|build|vendor|node_modules)\/|\.min\.(js|css)$|\.(snap|lock)$/;
+
+const json = process.argv.includes("--json");
+const diff = await readStdin();
+
+if (!diff) {
+    console.error("Usage: gh pr diff <number> | jev-review-model [--json]");
+    process.exit(1);
+}
+
+const files = parseDiff(diff);
+const reviewable = files.filter((file) => !NOISE.test(file.path));
+
+const fileCount = files.length;
+const lineCount = files.reduce((total, file) => total + file.added + file.removed, 0);
+
+const { state, truncated } = buildState(reviewable);
+
+let answers;
+
+try {
+    ({ answers } = await new TypeSafeClient().systemOne({
+        state,
+        questions: {
+            securitySensitive: noul(
+                "Does this change touch security-sensitive code?",
+                {
+                    true: "It changes authentication, authorization, permissions, cryptography, session or token handling, input sanitization or escaping, file or network access, or direct database access",
+                    false: "It stays clear of those areas, or only passes through them without changing how they behave",
+                },
+            ),
+            architectural: noul(
+                "Is this change architectural rather than local?",
+                {
+                    true: "It introduces or reshapes an abstraction, changes a public API contract or method signature, alters how components depend on each other, or refactors broadly across the codebase",
+                    false: "It works within the existing structure: new behavior, a fix, or a tidy-up that leaves contracts and relationships as they were",
+                },
+            ),
+            reviewDemand: score("How much careful reasoning does reviewing this change demand?", [
+                "Mechanical or isolated: typos, comments, docs, version bumps, formatting, test-only tweaks, or a fix contained in one function whose effect is plain to see",
+                "Ordinary: a feature or bug fix across a few files that follows patterns already present in the codebase, with effects that are local and easy to trace",
+                "Context-dependent: correctness rests on things outside the diff, such as interacting components, state or lifecycle, backwards compatibility, or edge cases that are easy to get wrong",
+                "Wide or subtle: cross-cutting refactors, concurrency, data migrations, security-relevant logic, or new public surface that callers will come to depend on",
+            ]),
+        },
+    }));
+} catch (error) {
+    if (!(error instanceof TypeSafeError)) throw error;
+
+    console.error(error.message);
+    process.exit(1);
+}
+
+const security = answers.securitySensitive.noul;
+const architectural = answers.architectural.noul;
+const demand = answers.reviewDemand.score;
+
+const flagged = Math.max(security, architectural) >= 0.5;
+
+const reasons = [];
+
+if (fileCount > 20) reasons.push(`${fileCount} files changed`);
+if (lineCount > 500) reasons.push(`${lineCount} changed lines`);
+if (demand >= 2) reasons.push(`review demand ${demand.toFixed(1)} of 3`);
+
+// Touching security or architecture only earns Opus if the change is also demanding
+// enough to get wrong. A three-line guard clause next to auth code is still three lines.
+if (flagged && demand >= 1.5) {
+    if (security >= 0.5) reasons.push(`security-sensitive (${security.toFixed(2)})`);
+    if (architectural >= 0.5) reasons.push(`architectural (${architectural.toFixed(2)})`);
+}
+
+const small = fileCount <= 10 && lineCount < 200 && demand < 1.5 && !flagged;
+const recommendation = reasons.length ? "opus" : small ? "sonnet" : "either";
+
+if (json) {
+    console.log(JSON.stringify({
+        recommendation,
+        reasons,
+        files: fileCount,
+        lines: lineCount,
+        truncated,
+        signals: {
+            securitySensitive: security,
+            architectural,
+            reviewDemand: demand,
+            reviewDemandConfidence: answers.reviewDemand.confidence,
+        },
+    }, null, 2));
+} else {
+    console.log(recommendation);
+    console.log(`files: ${fileCount}, lines: ${lineCount}${truncated ? " (diff truncated for analysis)" : ""}`);
+    console.log(`security-sensitive: ${security.toFixed(2)}`);
+    console.log(`architectural: ${architectural.toFixed(2)}`);
+    console.log(`review demand: ${demand.toFixed(1)} of 3 (confidence ${answers.reviewDemand.confidence.toFixed(2)})`);
+    if (reasons.length) console.log(`reasons: ${reasons.join("; ")}`);
+}
+
+function parseDiff(text) {
+    const files = [];
+    let current = null;
+
+    for (const line of text.split("\n")) {
+        const header = line.match(/^diff --git a\/.+? b\/(.+)$/);
+
+        if (header) {
+            current = { path: header[1], added: 0, removed: 0, body: [] };
+            files.push(current);
+            continue;
+        }
+
+        if (!current) continue;
+
+        current.body.push(line);
+
+        if (line.startsWith("+") && !line.startsWith("+++")) current.added++;
+        else if (line.startsWith("-") && !line.startsWith("---")) current.removed++;
+    }
+
+    return files;
+}
+
+function buildState(files) {
+    const summary = files.map(({ path, added, removed }) => ({ path, added, removed }));
+
+    let budget = STATE_CHAR_BUDGET;
+    let truncated = false;
+    const chunks = [];
+
+    for (const file of files) {
+        const chunk = `diff --git a/${file.path} b/${file.path}\n${file.body.join("\n")}`;
+
+        if (chunk.length > budget) {
+            truncated = true;
+            if (budget > 2000) chunks.push(`${chunk.slice(0, budget)}\n[truncated]`);
+            break;
+        }
+
+        chunks.push(chunk);
+        budget -= chunk.length;
+    }
+
+    return { state: { files: summary, diff: chunks.join("\n") }, truncated };
+}
+
+async function readStdin() {
+    if (process.stdin.isTTY) return "";
+
+    let text = "";
+    for await (const chunk of process.stdin) text += chunk;
+
+    return text.trim();
+}

@@ -63,16 +63,25 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
 
    Reflect this in your verdict: red CI, required checks that never ran, or merge conflicts each independently block a "Mergeable" verdict outright. **Pending/in-progress CI does not** — it doesn't turn a clean PR into "Needs changes"; it just marks the verdict as pending CI (see step 9). A branch merely being behind (with its required checks still green) does **not** block anything either.
 
-5. **Consider whether the current model is the right fit** for this review. You know which model you are from your system context.
-   - **If not Opus**, and any of the following are true, you MUST stop and tell the user to switch to `/model opus`, then wait for their response before proceeding:
-     - More than 20 files changed
-     - Diff exceeds ~500 lines
-     - Changes touch security-sensitive code (auth, crypto, permissions, data access)
-     - Changes are architectural in nature (new abstractions, major refactors, API contracts)
-   - **If Opus**, and all of the following are true, you MUST stop and tell the user to switch to `/model sonnet`, then wait for their response before proceeding:
-     - 10 or fewer files changed
-     - Diff is under ~200 lines
-     - No security-sensitive or architectural changes
+5. **Check the current model is the right fit** for this review. You know which model you are from your system context.
+
+   **Were you told which model to use? Then skip this step.** Whoever said so — the user on a hunch, an orchestrator that already ran the router — has decided. Don't second-guess it, don't check it, carry on to step 6. The one exception is a model you plainly aren't: told opus while running as sonnet is a bad spawn, not a judgement call, so stop and say so, as below.
+
+   Otherwise ask the router. Don't eyeball the diff for this:
+
+   ```bash
+   gh pr diff <number> --repo <repo> | jev-review-model
+   ```
+
+   It sizes the diff in code and asks [Jev](https://docs.typesafe.ai) whether the change is security-sensitive, architectural, and how much careful reasoning it demands. First line of output is the recommendation — `opus`, `sonnet`, or `either` — and the lines under it are the signals behind it.
+
+   - **`either`** → the diff is in the middle ground. Proceed on whatever model you're on.
+   - **`opus`**, and you are not Opus → you MUST stop and tell the user to switch to `/model opus`, then wait for their response before proceeding.
+   - **`sonnet`**, and you are Opus → you MUST stop and tell the user to switch to `/model sonnet`, then wait for their response before proceeding.
+
+   Quote the router's reasons when you report a mismatch, so the user can see why.
+
+   If `jev-review-model` isn't on `PATH` or fails (e.g. no `TYPESAFE_API_KEY` in this environment), say so in one line and fall back to judging it yourself: **Opus** if more than 20 files, more than ~500 lines, security-sensitive code (auth, crypto, permissions, data access), or architectural changes (new abstractions, major refactors, API contracts); **Sonnet** if 10 or fewer files, under ~200 lines, and none of those; otherwise carry on where you are.
 
    Do not rationalize skipping this step or proceeding anyway because the PR seems tractable, time is short, or the cost seems low. If the model is a mismatch, stop. Do not continue the review under the current model. State the model mismatch plainly and wait for the user's response.
 
