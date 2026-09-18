@@ -49,7 +49,8 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
      ```bash
      gh run view <run-id> --repo <repo> --log-failed
      ```
-   - If checks are still **pending/in progress**, say so; don't call a PR mergeable on unverified CI.
+   - **Exception: PR-title/metadata-only lint checks** (e.g. a semantic/conventional-commit PR-title check) that fail purely on the PR's title or description text — not the code — don't block "Mergeable." They're a one-line metadata edit, not a code fix. Report them as an Observation, not a Critical finding.
+   - If checks are still **pending/in progress** (not failed, not missing), say so — this makes the verdict **pending CI** (see step 9), but it does not by itself force "Needs changes."
 
    **(b) Required checks that never ran.** Green ≠ complete. `gh pr checks` only lists checks that were actually triggered. **A branch being somewhat behind the base is fine and is *not* a blocker on its own** — don't ding a PR just for being out of date. The problem is only when it's so far behind that **required checks never ran at all**: on a badly stale branch, required checks configured on the base can be **absent entirely** (not failing), so a PR can look "all green" while its required CI never actually executed. Cross-reference `gh pr checks` against the base branch's required checks; if a required check is **missing** (never ran), treat it as **Critical** — the PR is not verifiably passing and can't be called "Mergeable" until CI actually runs. (`mergeStateStatus: BLOCKED` — unsatisfied required checks/reviews — is a signal; `BEHIND` alone just means out-of-date and is not itself a blocker.)
 
@@ -60,7 +61,7 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
    - `mergeable: UNKNOWN` → GitHub hasn't computed it yet; re-fetch, and don't assume clean.
    - `mergeStateStatus: CLEAN` (or `UNSTABLE`, i.e. only non-required checks failing) is mergeable from a merge-state standpoint — no need to call this out, just factor it into the verdict.
 
-   Reflect this in your verdict: red/pending CI, required checks that never ran, or merge conflicts each independently block a "Mergeable" verdict. A branch merely being behind (with its required checks still green) does **not**.
+   Reflect this in your verdict: red CI, required checks that never ran, or merge conflicts each independently block a "Mergeable" verdict outright. **Pending/in-progress CI does not** — it doesn't turn a clean PR into "Needs changes"; it just marks the verdict as pending CI (see step 9). A branch merely being behind (with its required checks still green) does **not** block anything either.
 
 5. **Consider whether the current model is the right fit** for this review. You know which model you are from your system context.
    - **If not Opus**, and any of the following are true, you MUST stop and tell the user to switch to `/model opus`, then wait for their response before proceeding:
@@ -114,11 +115,27 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
 
 9. **Present the review.**
 
-   **Lead with the verdict.** It is binary — there is no middle:
+   **Lead with the verdict.** The base verdict is binary — there is no middle:
    - **Mergeable** — no Findings, CI green and actually run, no conflicts.
-   - **Needs changes** — one or more Findings at any severity (a Nit counts), or a CI/merge-state blocker from step 4.
+   - **Needs changes** — one or more Findings at any severity (a Nit counts), or a red-CI/merge-state blocker from step 4 (failing/missing required checks, merge conflicts) — except PR-title/metadata-only lint failures, which don't block "Mergeable" (step 4).
 
    Never write "mergeable with nits" or any hedged variant. A Nit means you want a change before merge, so that's **Needs changes**. Observations never qualify the verdict — a PR with ten Observations and zero Findings is plainly **Mergeable**, and must be stated that way.
+
+   **Pending CI is a separate qualifier, not a third verdict value.** If required checks are still running (not failed, not missing) at the time of review, append `, pending CI` to whichever base verdict applies:
+   - **Mergeable, pending CI** — no Findings, no conflicts, but CI hasn't finished yet.
+   - **Needs changes, pending CI** — Findings exist (or CI you *can* see is otherwise fine) and separate required checks are still running.
+
+   A run that is merely in progress must never by itself flip a clean PR to "Needs changes" — that's what the qualifier is for. Once CI finishes, a re-review drops the qualifier and reflects the real result (a failure found on completion is then a Critical finding, as in step 4).
+
+   **Record which model did the review**, on its own line directly under the verdict:
+
+   ```
+   Review model: Opus 5
+   ```
+
+   Name the model you are, from your system context (e.g. `Opus 5`, `Sonnet 5`, `Codex Sol`) — not a generic "Claude". If more than one model contributed to the review you're presenting — a second opinion, a consolidated review, work done by a sub-agent you spawned — list every one, in the order they contributed: `Review model: Opus 5, Codex Sol`. Attribute honestly: list a model only if it actually reviewed the code, not merely if it relayed or reformatted someone else's findings.
+
+   This line matters because the model is otherwise unrecoverable after the fact — a review written to a file or scratchpad carries no record of what produced it, and the process it ran in eventually goes away. Include it even when the review is presented only in the session. When a re-review replaces an earlier one, the line reflects the models behind the review as it now stands, not the history.
 
    **Then Findings**, ordered by severity. File and line, what's wrong, suggested fix where you have one.
 
@@ -126,7 +143,7 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
 
    Omit either section entirely when it's empty. If both are empty, say so — don't invent issues to fill space.
 
-   Only report CI/mergeability when there's an actual problem (failing/pending/never-ran checks, conflicts, blocked state). Step 4 is a check you perform, not content to output: when CI and mergeability are clean, do not report on it at all — no "CI & Mergeability" header, no summary of which commands you ran or that N checks passed, no bullet list of what was verified. Passing CI is a silent precondition for **Mergeable**, not a finding worth narrating.
+   Only report CI/mergeability when there's an actual problem (failing/never-ran checks, conflicts, blocked state) or when CI is pending (which the `, pending CI` verdict qualifier already communicates — a one-line note on which checks are still running is enough, no need to elaborate further). Step 4 is a check you perform, not content to output: when CI and mergeability are clean and complete, do not report on it at all — no "CI & Mergeability" header, no summary of which commands you ran or that N checks passed, no bullet list of what was verified. Passing, finished CI is a silent precondition for **Mergeable**, not a finding worth narrating.
 
 10. **Do not make code changes** unless the user explicitly asks.
 
