@@ -24,6 +24,14 @@ Timers: "remind me in 20 minutes", "set a timer", "ping me when that's done" mea
 timer — `mcp__solo__timer_set` / `_list` / `_cancel`, or `timer_fire_when_idle_any` /
 `_all` to wait on other processes. Never sleep or poll in a Bash loop instead.
 
+Bodies of work: Jason runs several in parallel inside one Solo project, so each one gets a
+stable slug — the git branch name, or the worktree directory name, or one you pick and keep
+for the rest of the session. Tag every scratchpad you create with that slug, and pass
+`name: "<slug>: <role>"` when you spawn an agent for it. Solo records no parent link between
+processes, so a slug in the name is the only way a later session can tell which agents
+belong to which work. The `/suspend`, `/resume-work` and `/finish-work` skills rely on both
+conventions.
+
 Two things stay yours: agents you decide to delegate to on your own — codebase
 exploration, planning, review fan-out — keep using the Task tool, and your own internal
 task tracking stays in the built-in task list. Working files you write purely for your own
