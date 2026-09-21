@@ -24,7 +24,8 @@
     ~/.config/sesh/sesh.toml: tmux/sesh.toml
     ~/.claude/settings.json: ai/claude/settings.json
     ~/.claude/CLAUDE.md: ai/claude/CLAUDE.md
-    ~/.claude/skills: ai/claude/skills
+    ~/.claude/skills: ai/skills
+    ~/.agents/skills: ai/skills
 
 - shell:
   - description: Hushing login
