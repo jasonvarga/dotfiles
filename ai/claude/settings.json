@@ -6,7 +6,7 @@
   "alwaysThinkingEnabled": true,
   "tui": "fullscreen",
   "theme": "auto",
-  "model": "opus[1m]",
+  "model": "sonnet",
   "permissions": {
     "allow": [
       "Edit",
@@ -88,10 +88,25 @@
       "Bash(git clean -f*)",
       "Bash(rm -rf *)",
       "Read(./.env)",
-      "Read(./.env.*)"
+      "Read(./.env.*)",
+      "EnterPlanMode",
+      "ExitPlanMode",
+      "DesignSync",
+      "NotebookEdit",
+      "SendMessage",
+      "PushNotification",
+      "RemoteTrigger",
+      "ReportFindings",
+      "ScheduleWakeup",
+      "AskUserQuestion",
+      "CronCreate",
+      "CronDelete",
+      "CronList"
     ],
     "defaultMode": "auto"
   },
+  "disableClaudeAiConnectors": true,
+  "disableBundledSkills": true,
   "hooks": {
     "SessionStart": [
       {
@@ -105,7 +120,22 @@
       }
     ]
   },
+  "disableRemoteControl": true,
+  "disableWorkflows": true,
+  "disableArtifact": true,
   "enableWorkflows": false,
+  "respondToBashCommands": false,
+  "enabledPlugins": {
+    "typesafe@typesafe-ai": true
+  },
+  "extraKnownMarketplaces": {
+    "typesafe-ai": {
+      "source": {
+        "source": "github",
+        "repo": "typesafe-ai/skills"
+      }
+    }
+  },
   "awaySummaryEnabled": false,
   "skipAutoPermissionPrompt": true
 }
