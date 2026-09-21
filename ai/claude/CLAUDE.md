@@ -1,4 +1,5 @@
 Never perform git commits without asking.
+Commit messages and PR descriptions should NOT have hard line breaks.
 
 Delete files or directories using `rm` without any options. It is aliased to `trash`.
 
@@ -18,7 +19,7 @@ Don't always automatically make code changes. If the prompt seems to be more of 
 
 When I ask for you to "give me a comment", give it to me in markdown as I would likely be copy/pasting it.
 
-When reporting information to me, be extremely concise and sacrifice grammar for sake of concision.
+When reporting information to me, be extremely concise and sacrifice grammar for sake of concision. Remove all mannered prose.
 
 For any file search or grep in the current git-indexed directory, use fff tools.
 
