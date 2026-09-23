@@ -1,25 +1,24 @@
 ---
 name: statamic-release
 description: >-
-  Prepare a Statamic release, or clean up after one. Preparing syncs the default
-  branch, creates a `release` branch, and generates the changelog entry — use
-  when the user says "prepare a release", "start a release", "cut a release",
-  "do a statamic release". Cleaning up verifies the release shipped then deletes
-  the release branch and pulls the tag — use when the user says "pr merged",
-  "release tagged", "released", "it's out", or similar. Only operates inside the
-  statamic/cms repo. Preparing stops before committing — it never commits,
-  pushes, tags, or opens a PR.
+  Prepare a Statamic release: sync the default branch, create a `release`
+  branch, and generate the changelog entry. Use when the user says "prepare a
+  release", "start a release", "cut a release", or "do a statamic release".
+  Only operates inside the statamic/cms repo. Stops before committing, pushing,
+  tagging, or opening a PR.
 ---
 
 # Statamic release
 
-Two phases, run at different times. Pick the one the user is asking for:
+This skill has two phases, run at different times:
 
 - **[Prepare](#phase-a-prepare-the-release)** — before the release exists.
   Branch + changelog.
 - **[Clean up](#phase-b-clean-up-after-the-release)** — after the PR is merged
-  and the release workflow has run. Triggered by "pr merged", "released",
-  "release tagged", etc.
+  and the release workflow has run. This is a follow-up only: use it when this
+  skill already prepared that release earlier in the same session. Do not select
+  this skill solely because an unrelated user message says "PR merged",
+  "released", "release tagged", or similar.
 
 ---
 
@@ -110,9 +109,12 @@ flag has to be off for this skill to chain it.
 
 # Phase B: clean up after the release
 
-The user says "pr merged", "released", "release tagged", or similar. They mean:
-the release PR is in and the **Create Release** workflow has been run manually.
-Verify that's actually true before deleting anything.
+Use this phase only as a follow-up to Phase A from the same session. A user
+saying "PR merged", "released", "release tagged", or similar is not enough to
+invoke this skill, since those messages commonly belong to another workflow.
+In the release-session follow-up, they mean the release PR is in and the
+**Create Release** workflow has been run manually. Verify that's actually true
+before deleting anything.
 
 ## 1. Confirm the PR merged
 
