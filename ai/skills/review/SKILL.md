@@ -154,9 +154,51 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
 
    Only report CI/mergeability when there's an actual problem (failing/never-ran checks, conflicts, blocked state) or when CI is pending (which the `, pending CI` verdict qualifier already communicates — a one-line note on which checks are still running is enough, no need to elaborate further). Step 4 is a check you perform, not content to output: when CI and mergeability are clean and complete, do not report on it at all — no "CI & Mergeability" header, no summary of which commands you ran or that N checks passed, no bullet list of what was verified. Passing, finished CI is a silent precondition for **Mergeable**, not a finding worth narrating.
 
-10. **Do not make code changes** unless the user explicitly asks.
+10. **When writing this review to a Solo scratchpad** — because you were asked to save it, or you're running under an orchestrator that expects one — use this exact structure, every time, so every review pad reads the same way:
 
-11. **Never post anything to GitHub unless the request that started *this* review asked for it.** Default output is your findings in the session, nothing else — no `gh pr comment`, no `gh pr review`, no inline comments, no approving/requesting changes, no issue comments.
+    ```
+    - Reviewed at: <short sha> - discussion through <ISO8601 timestamp>
+    - Repo: <owner/repo>
+    - Author: <PR author>
+    - Branch: <head branch>
+    - Target: <base branch>
+    - URL: <PR URL>
+    - Review model: <model(s), as in step 9>
+    - Verdict: <✅ | 🔴> **<Mergeable | Needs changes>[, pending CI]**
+
+    ## Summary
+
+    <2-4 sentences: what the PR does and the overall shape of the review. Orientation, not a restatement of the diff — this is also where a verdict's justification lives.>
+
+    ## Verification performed
+
+    - <what you checked (CI status and mergeability per step 4, tests run or read, whether you exercised the change yourself)>: <result>
+
+    ## Findings
+
+    - <one bullet per finding, as in step 9: severity, file and line, what's wrong, suggested fix where you have one>
+
+    ## Observations
+
+    - <one bullet per observation, as in step 9: one line each, no severity labels>
+
+    ## <a specific heading, only if genuinely needed>
+
+    <anything that doesn't fit the sections above — used sparingly, most reviews won't have one.>
+    ```
+
+    - **Bullet everything below the title** — the metadata block, Verification performed, Findings, and Observations. Solo's scratchpad view renders markdown, and plain consecutive lines with no blank line between them collapse onto one rendered line; a bullet list is what keeps each item on its own line.
+    - **Name the scratchpad** `PR #<number> Review - <PR title, with a leading bracketed tag like [6.x] stripped>` (same convention `pr-review-orchestrator` uses) — but don't repeat the title inside the body. The scratchpad's name already carries it; the body starts straight at the `Reviewed at` bullet.
+    - **`Reviewed at` bullet**: `gh pr view <number> --repo <repo> --json headRefOid,updatedAt` — `headRefOid` truncated to 7 chars, `updatedAt` as the timestamp. Rewrite this line on every re-review; it's how staleness gets detected later (by a refresh sweep or otherwise). It stays the very first line of the body — that position is load-bearing, a refresh sweep reads only the first line to check staleness cheaply.
+    - **`Branch`**: the PR's head branch (`headRefName`).
+    - **`Target`**: the PR's base branch (`baseRefName`) — what it's merging into.
+    - **`Verdict`**: the same binary value decided in step 9, with the same `, pending CI` qualifier when it applies, bolded the same way step 9 bolds it, prefixed with ✅ for Mergeable or 🔴 for Needs changes — a metadata bullet here, not a heading, so it can be found without opening the body.
+    - **Verification performed**: at least one bullet, even when everything came back clean — this is the one place CI/mergeability gets reported now; step 9's "don't report it when clean" rule is for the in-session presentation only.
+    - **Findings / Observations**: same content and the same omit-when-empty rule as step 9, just formatted as bullets instead of freeform paragraphs.
+
+11. **Do not make code changes** unless the user explicitly asks.
+
+12. **Never post anything to GitHub unless the request that started *this* review asked for it.** Default output is your findings in the session, nothing else — no `gh pr comment`, no `gh pr review`, no inline comments, no approving/requesting changes, no issue comments.
 
     Permission to post does **not** carry over. If the user asked you to post earlier in the session, that applied to that review only. A follow-up like "commits have been pushed, please re-review", "take another look", or "review again" is a request for a *fresh* review with **no** posting — treat it exactly as if it were the first thing said in the session. Same for an orchestrator or any automated caller re-triggering a review: a re-run is not an instruction to post.
 
