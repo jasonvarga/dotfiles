@@ -105,6 +105,18 @@ flag has to be off for this skill to chain it.
 - Remind the user nothing is committed, and that the release branch and
   changelog diff are theirs to review.
 
+## 7. Committing and creating pull request
+
+- When the user says to commit, the CHANGELOG.md should be its own commit
+  with a message of "Changelog".
+- Anything else should be committed atomically.
+- The pull request title should match previous release PRs. 
+  `[{major version line prefix}] {this release version}`
+  e.g. `[6.x] 6.30.1`
+- The pull request body should take one of two forms:
+  - If it contains only the changelog commit, the body should simply read: "Changelog for {version}"
+  - If it contains multiple commits, the body should be a bullet list. "Changelog for {version}" and then the other items.
+
 ---
 
 # Phase B: clean up after the release
