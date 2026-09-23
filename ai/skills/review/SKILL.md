@@ -11,7 +11,7 @@ description: >-
 
 Review a single GitHub pull request by number. Prioritize bugs, behavioral regressions, security issues, and missing tests.
 
-Output is split in two: **Findings** — things that should change before this merges — and **Observations** — things worth knowing that don't block anything. Only Findings affect the verdict. On a good PR, Findings is empty. That is the expected outcome of a review, not a failed one.
+Output has up to three parts: **Findings** — things that should change before this merges, **Observations** — things worth knowing that don't block anything, and **Highlights** — good decisions or good coverage worth acknowledging, with no latent concern attached. Only Findings affect the verdict. On a good PR, Findings is empty. That is the expected outcome of a review, not a failed one.
 
 ## Arguments
 
@@ -104,17 +104,21 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
    - **Consistency** – Does this follow the same style/pattern as existing code/features?
    - **Other concerns** — Performance, maintainability, missing localization
 
-8. **Classify everything you found** as either a Finding or an Observation. The test is not how interesting the issue is or how confident you are — it is what happens if the PR merges exactly as it stands.
+8. **Classify everything you found** as a Finding, an Observation, or a Highlight. The test is not how interesting the issue is or how confident you are — it is what happens if the PR merges exactly as it stands, and whether there's any latent concern attached at all.
 
    **Findings — merging as-is hurts.** Something is broken, unsafe, or regressive, or the fix is meaningfully more expensive after merge than before it.
    - **Critical** — must fix. Bugs, security holes, breaking changes, data loss, red/missing CI, merge conflicts.
    - **Warning** — should fix. Real problems that will bite, but aren't fatal.
    - **Nit** — small, but worth doing *now*, because now is genuinely cheaper than later. The bar is a one-way door: public API surface that a release locks in, a pattern that gets copied once it's merged, migrations and data shape, behavior that a merged test cements. **If the identical change would be exactly as easy to make next week, it is not a Nit** — it's an Observation. Nits should be rare. Naming, tidier loops, extra guard clauses, and reorganized code are almost never Nits.
 
-   **Observations — merging as-is is fine.** No ask attached. You're telling the human something, not requesting a change.
+   **Observations — merging as-is is fine, but there's still something worth watching.** No ask attached, but a latent concern, trade-off, or piece of context remains — this is the section the human scans for things that might need addressing later, so it must not be diluted with pure compliments.
    - Pre-existing issues in code the PR touched but didn't cause.
    - "Not a problem, but I'd have written this differently."
    - Anything you'd like changed but can't honestly say is worse to defer.
+   - A trade-off, edge case, or piece of context the human should know even though nothing needs to happen.
+
+   **Highlights — good and worth saying, with zero latent concern.** If your sentence is praise with no "but," no edge case, and no residual risk, it's a Highlight, not an Observation. Test: could you delete the sentence's second half without losing information? If there's nothing to lose, it's a Highlight. Examples of what belongs here, not in Observations: "this correctly handles X," "good test coverage of Y," "this is the right trade-off." Keep these terse — one line, no elaboration. Don't manufacture praise to populate this section; most reviews should have few, and an empty Highlights section is normal.
+   - Confirming clean/green CI or mergeability is **never** a Highlight or an Observation — step 4/9 already cover why: it's a silent precondition, not a finding worth narrating.
 
    Attribution edge cases:
    - **PR touches a line carrying a pre-existing bug** → Observation. Unless the PR makes it reachable, makes it worse, or this is plainly the moment to fix it — then Finding.
@@ -150,7 +154,9 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
 
    **Then Observations**, one line each. No severity labels, no code blocks, no suggested-fix blocks. If an item needs more than a line to explain, it's probably a Finding; if it isn't, cut it.
 
-   Omit either section entirely when it's empty. If both are empty, say so — don't invent issues to fill space.
+   **Then Highlights**, one line each, same formatting rules as Observations. Pure praise only — if a line has a latent concern attached, it belongs in Observations instead (step 8).
+
+   Omit any section entirely when it's empty. If all three are empty, say so — don't invent issues to fill space.
 
    Only report CI/mergeability when there's an actual problem (failing/never-ran checks, conflicts, blocked state) or when CI is pending (which the `, pending CI` verdict qualifier already communicates — a one-line note on which checks are still running is enough, no need to elaborate further). Step 4 is a check you perform, not content to output: when CI and mergeability are clean and complete, do not report on it at all — no "CI & Mergeability" header, no summary of which commands you ran or that N checks passed, no bullet list of what was verified. Passing, finished CI is a silent precondition for **Mergeable**, not a finding worth narrating.
 
@@ -182,6 +188,10 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
 
     - <one bullet per observation, as in step 9: one line each, no severity labels>
 
+    ## Highlights
+
+    - <one bullet per highlight, as in step 9: one line each, pure praise only>
+
     ## <a specific heading, only if genuinely needed>
 
     <anything that doesn't fit the sections above — used sparingly, most reviews won't have one.>
@@ -194,7 +204,7 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
     - **`Target`**: the PR's base branch (`baseRefName`) — what it's merging into.
     - **`Verdict`**: the same binary value decided in step 9, with the same `, pending CI` qualifier when it applies, bolded the same way step 9 bolds it, prefixed with ✅ for Mergeable or 🔴 for Needs changes — a metadata bullet here, not a heading, so it can be found without opening the body.
     - **Verification performed**: at least one bullet, even when everything came back clean — this is the one place CI/mergeability gets reported now; step 9's "don't report it when clean" rule is for the in-session presentation only.
-    - **Findings / Observations**: same content and the same omit-when-empty rule as step 9, just formatted as bullets instead of freeform paragraphs.
+    - **Findings / Observations / Highlights**: same content and the same omit-when-empty rule as step 9, just formatted as bullets instead of freeform paragraphs.
 
 11. **Do not make code changes** unless the user explicitly asks.
 
