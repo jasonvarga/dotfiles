@@ -1,0 +1,119 @@
+#!/usr/bin/env node
+
+import { choice, noul, score, TypeSafeClient, TypeSafeError } from "@typesafe-ai/sdk";
+import { readFile } from "node:fs/promises";
+
+const candidatesPath = argumentValue("--candidates") ?? new URL("../../models.json", import.meta.url);
+const task = await readStdin();
+
+if (!task) {
+    console.error("Usage: describe-task | jev-model-selection");
+    process.exit(1);
+}
+
+let candidates;
+
+try {
+    candidates = JSON.parse(await readFile(candidatesPath, "utf8"));
+    validateCandidates(candidates);
+} catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+}
+
+const criteria = Object.fromEntries(candidates.map((candidate) => [
+    candidate.id,
+    `${candidate.platform} — ${candidate.model} in ${candidate.surface}. ${candidate.description}`,
+]));
+
+const client = new TypeSafeClient();
+let answers;
+
+try {
+    ({ answers } = await client.systemOne({
+        state: { task, candidates },
+        questions: {
+            recommendation: choice(
+                "Which candidate is the smallest sufficient fit for this task? Choose only from the supplied candidates. Consider the task's modality, required tools and workflow, context, reasoning difficulty, risk, and speed. If candidates are otherwise tied, prefer lower latency/cost as described. Do not favor a candidate because of its vendor.",
+                criteria,
+            ),
+            reasoningDemand: score("How much careful reasoning does this task require?", [
+                "Routine or mechanical work with clear checks",
+                "Ordinary work with a few connected decisions",
+                "Complex work requiring careful analysis, debugging, or tradeoffs",
+                "Difficult work with consequential failure modes, subtle interactions, or important architectural tradeoffs",
+                "Exceptionally difficult, ambiguous, high-risk, or open-ended work",
+                "Exhaustive, long-horizon reasoning where the extra time and cost are explicitly justified",
+            ]),
+            codingAgentNeeded: noul("Does doing this task benefit materially from an interactive coding agent with repository or terminal access?", {
+                true: "It requires or substantially benefits from inspecting, changing, testing, or debugging project files using development tools",
+                false: "It can be completed well in a general chat or document workspace without project-tool access",
+            }),
+            externalToolsNeeded: noul("Does this task materially depend on product-specific connected tools, files, browsing, or other external capabilities?", {
+                true: "Its outcome depends on available tools, files, browsing, or connected services",
+                false: "It can be completed from the task description and ordinary conversation alone",
+            }),
+        },
+    }));
+} catch (error) {
+    if (!(error instanceof TypeSafeError)) throw error;
+    console.error(error.message);
+    process.exit(1);
+}
+
+const candidate = candidates.find(({ id }) => id === answers.recommendation.choice);
+if (!candidate) {
+    console.error("Jev returned a candidate that was not supplied.");
+    process.exit(1);
+}
+const effort = selectEffort(candidate.effort, answers.reasoningDemand.score);
+
+console.log(JSON.stringify({
+    recommendation: {
+        ...candidate,
+        effort: effort ?? "no user-selectable setting",
+    },
+    signals: {
+        reasoningDemand: answers.reasoningDemand.score,
+        reasoningDemandConfidence: answers.reasoningDemand.confidence,
+        codingAgentNeeded: answers.codingAgentNeeded.noul,
+        externalToolsNeeded: answers.externalToolsNeeded.noul,
+    },
+}, null, 2));
+
+function argumentValue(name) {
+    const index = process.argv.indexOf(name);
+    return index >= 0 ? process.argv[index + 1] : undefined;
+}
+
+function validateCandidates(value) {
+    if (!Array.isArray(value) || value.length < 2) throw new Error("Candidates must be a JSON array with at least two entries.");
+
+    const ids = new Set();
+    for (const candidate of value) {
+        if (!candidate || typeof candidate !== "object") throw new Error("Each candidate must be an object.");
+        for (const field of ["id", "platform", "model", "surface", "description"]) {
+            if (typeof candidate[field] !== "string" || !candidate[field].trim()) {
+                throw new Error(`Candidate ${field} must be a non-empty string.`);
+            }
+        }
+        if (ids.has(candidate.id)) throw new Error(`Candidate id ${candidate.id} is duplicated.`);
+        ids.add(candidate.id);
+        if (candidate.effort !== undefined && (!Array.isArray(candidate.effort) || candidate.effort.some((value) => typeof value !== "string"))) {
+            throw new Error(`Candidate ${candidate.id} effort must be an array of strings.`);
+        }
+    }
+}
+
+function selectEffort(effort, demand) {
+    if (!effort?.length) return null;
+    const index = Math.min(effort.length - 1, Math.max(0, Math.round(demand)));
+    return effort[index];
+}
+
+async function readStdin() {
+    if (process.stdin.isTTY) return "";
+    let text = "";
+    for await (const chunk of process.stdin) text += chunk;
+    return text.trim();
+}

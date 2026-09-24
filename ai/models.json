@@ -1,0 +1,58 @@
+[
+  {
+    "id": "openai-gpt-6-astra",
+    "platform": "OpenAI",
+    "model": "gpt-6-astra",
+    "surface": "Codex",
+    "effort": ["low", "medium", "high", "xhigh", "max", "ultra"],
+    "description": "Most capable model for complex, demanding work."
+  },
+  {
+    "id": "openai-gpt-6-sol",
+    "platform": "OpenAI",
+    "model": "gpt-6-sol",
+    "surface": "Codex",
+    "effort": ["low", "medium", "high", "xhigh", "max", "ultra"],
+    "description": "GPT-6 Sol Codex model."
+  },
+  {
+    "id": "openai-gpt-6-luna",
+    "platform": "OpenAI",
+    "model": "gpt-6-luna",
+    "surface": "Codex",
+    "effort": ["low", "medium", "high", "xhigh", "max"],
+    "description": "GPT-6 Luna Codex model."
+  },
+  {
+    "id": "anthropic-opus-5-5-1m",
+    "platform": "Anthropic",
+    "model": "Opus 5.5 (1M context)",
+    "surface": "Claude",
+    "effort": ["low", "medium", "high", "xhigh", "max"],
+    "description": "Best for everyday, complex tasks; 1M context."
+  },
+  {
+    "id": "anthropic-fable-5-1",
+    "platform": "Anthropic",
+    "model": "Fable 5.1",
+    "surface": "Claude",
+    "effort": ["low", "medium", "high", "xhigh", "max"],
+    "description": "Most capable for the hardest and longest-running tasks."
+  },
+  {
+    "id": "anthropic-sonnet-5",
+    "platform": "Anthropic",
+    "model": "Sonnet 5",
+    "surface": "Claude",
+    "effort": ["low", "medium", "high", "xhigh", "max"],
+    "description": "Efficient for routine tasks."
+  },
+  {
+    "id": "anthropic-haiku-4-5",
+    "platform": "Anthropic",
+    "model": "Haiku 4.5",
+    "surface": "Claude",
+    "effort": ["low", "medium", "high", "xhigh", "max"],
+    "description": "Fastest for quick answers."
+  }
+]
