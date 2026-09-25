@@ -47,7 +47,7 @@ Then detect everything — **hardcode nothing**:
   ```
   kv_set(project_id=<PROJECT_ID>, key="pr_review_orchestrator_process_id", value=<ORCHESTRATOR_PROCESS_ID>)
   ```
-  Re-publish whenever you restart under a new id.
+  Do this on **every** invocation of this skill, unconditionally — don't `kv_get` first to see whether it's already right. A stale id sends every agent's verdict ping to a dead or unrelated process, and the write is cheaper than the check.
 - Rename your own process to exactly `PR Reviews` if it isn't already — `rename_process(process_id=<ORCHESTRATOR_PROCESS_ID>, new_name="PR Reviews")`. solo-companion detects you by that exact name.
 
 **Master scratchpad** — one per project, titled exactly `PR Review Orchestrator — Master Status Table`. Locate it by title, never by a hardcoded id:
@@ -62,9 +62,9 @@ Reuse its id for the rest of the session. If it doesn't exist, create it per `re
 
 ## Startup
 
-Startup is **cheap and read-only**. This skill is re-invoked every time the user clears a long session, and the pad is usually already correct — re-verifying the board against GitHub burns tokens to confirm what the table already says.
+Startup is **cheap and read-only** — the one write is republishing your process id. This skill is re-invoked every time the user clears a long session, and the pad is usually already correct — re-verifying the board against GitHub burns tokens to confirm what the table already says.
 
-1. Setup, above.
+1. Setup, above — including the `pr_review_orchestrator_process_id` `kv_set`. Never skip it, even when the pad and board look current.
 2. Read **only** the Notes section: `scratchpad_read(scratchpad_id=<id>, mode="section", section_heading="Notes")`.
 3. Count the board — one call per icon, reading `total_matches`:
    `scratchpad_find(scratchpad_id=<id>, query="| 🔴 |", limit=1, context_lines=0)`.
