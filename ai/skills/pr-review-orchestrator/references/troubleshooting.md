@@ -14,9 +14,9 @@ An agent can complete its analysis, go idle, and never write its pad. Seen cause
 
 When a pad hasn't advanced, check `get_process_output(process_id=...)` before doing anything else:
 
-- **Output shows a completed review** (or a sleep/API error after one) → the findings are still in its context. Send a short "your findings never reached the pad — write scratchpad `<id>` now, including the `## Verdict` and the marker first line". Re-running the whole review would waste work it already did.
+- **Output shows a completed review** (or a sleep/API error after one) → the findings are still in its context. Send a short "your findings never reached the pad — write scratchpad `<id>` now, including the `Verdict:` line and the `Reviewed at:` line". Re-running the whole review would waste work it already did.
 - **Output is blank, or shows a truncated first message** → it never received the task. Re-send it, short, per `references/review-task.md`.
-- **Output shows it asking to switch models** → the model router parked it: message 1 went out without naming a model, or the router disagreed with the model you spawned. Close it and respawn on the model it asked for, naming it this time.
+- **Output shows it asking to switch models** → the model router parked it: message 2 went out without naming a model, or the router disagreed with the model you spawned. Close it and respawn on the model it asked for, naming it this time.
 
 ## An agent is Running but nothing is happening
 

@@ -77,7 +77,7 @@ Do **not** on startup: call `gh`, list scratchpads, call `list_processes`, read 
 
 ## Verdicts
 
-The row's leading icon, taken from the review agent's `## Verdict` section:
+The row's leading icon, taken from the review agent's `Verdict:` line (see the `review` skill's scratchpad format):
 
 - `✅ Mergeable` — no findings. Observations don't change it.
 - `🔴 Needs changes` — any finding at all, including nits.
@@ -129,22 +129,24 @@ Use `list_processes` only for *discovery* of agents whose ids were never recorde
 Only when the user explicitly asks to open a review for a new PR.
 
 1. `gh pr view <number> --repo <OWNER/REPO> --json title,state,mergedAt` — abort if merged or closed.
-2. `scratchpad_find(project_id=<PROJECT_ID>, query="PR #<number> Review")` — if a pad exists, don't duplicate it; link to it and skip to step 5.
+2. `scratchpad_find(project_id=<PROJECT_ID>, query="PR #<number> Review")` — if a pad exists, don't duplicate it; link to it and read its intro metadata before choosing an agent model: `scratchpad_read(scratchpad_id=<id>, mode="content", offset=0, limit=8)`. Read only the opening metadata (enough to include the `Review model:` line), not the findings. If no pad exists, continue normally.
 3. `list_agent_tools()` → the `"Claude"` tool's `agent_tool_id`.
-4. **Pick the model.** Measure the PR; never infer it from the title or how tricky the subject sounds:
+4. **Pick the model.** An existing review's recorded model is the decision already made for that PR. If step 2 found a pad, look for its case-insensitive `Review model:` metadata field and use that value for the spawned agent. Do not run `jev-review-model`, second-guess it from the diff, or replace it with a newly requested model. The review skill records this field specifically so a replacement agent can preserve the original model choice.
+
+   Only when there is no existing `Review model:` field (including when there is no existing pad), determine the model anew. Measure the PR; never infer it from the title or how tricky the subject sounds:
    ```bash
    gh pr diff <number> --repo <OWNER/REPO> | jev-review-model
    ```
    Pipe it exactly like that — the diff travels through the pipe and never enters your context. Don't fetch it first, don't hand it to a subagent. First line is the recommendation: `opus` → opus; `sonnet` or `either` → sonnet (the middle ground defaults to the cheaper model). The reasons underneath are for your calibration notes.
    - **User named a model** ("review this one on opus") → use it, skip the router. A stated preference is not a hypothesis to check.
    - **Router unavailable or erroring** (no `TYPESAFE_API_KEY`, not on `PATH`) → fall back to `gh pr view <number> --repo <OWNER/REPO> --json additions,deletions,changedFiles`; over ~500 changed lines or ~15 files → opus, else sonnet. On this path you must **not** tell the agent its model fit was checked — let it run the router itself, which is better informed than the fallback.
-5. Spawn, then record the id immediately:
+5. Derive the process label from the title: a plain 2–5-word topic description, not the raw PR title. It should identify the subject at a glance, omit branch/version tags and boilerplate, and normally stay under 32 characters. Then spawn and record the id immediately:
    ```
    spawn_agent(agent_tool_id=<id>, name="<number> - <very short description>",
                extra_args=["--model","<model>"], include_agent_instructions=false)
    kv_set(project_id=<PROJECT_ID>, key="agent.pr-<number>", value=<process_id>)
    ```
-   Name **every** agent you spawn `<pr number> - <very short description>` — no `PR`, no `#`, no "Review Agent" boilerplate. e.g. `14698 - Link fieldtype`, `14764 - PDF viewer`. `include_agent_instructions=false` suppresses a ~300-token bootstrap block you never read.
+   Name **every** agent you spawn `<pr number> - <very short description>` — no `PR`, no `#`, no "Review Agent" boilerplate. **Never substitute the full/raw PR title for the description.** e.g. `14698 - Link fieldtype`, `14764 - PDF viewer`. The full title belongs only in the scratchpad and master-table row. `include_agent_instructions=false` suppresses a ~300-token bootstrap block you never read.
 6. **Send the task — `references/review-task.md`.** It goes out in two messages and must be sent verbatim.
 7. Add a `⏳` row to the table with the PR number plain and unlinked (its pad doesn't exist yet) — see `references/master-pad.md`.
 8. Arm the harvest timer, below.
@@ -174,11 +176,11 @@ Use `_all` to wake once per batch, or `_any` to harvest each as it lands (re-arm
 
 1. the pad's `revision` advanced past what it was at spawn,
 2. `updated_by_actor_name` is the agent you expected,
-3. its first line is the `Reviewed at commit:` marker naming the sha you asked for.
+3. its `Reviewed at:` line (see the `review` skill's scratchpad format) names the sha you asked for.
 
 If any fail, the review has not landed — do **not** record a verdict and do **not** re-run the review. See `references/troubleshooting.md`.
 
-Harvesting = read each `## Verdict`, set the icon, link the PR number to the pad. One line per PR to the user: icon, link, verdict phrase. Re-arm if anything is still pending.
+Harvesting = read each pad's `Verdict:` line, set the icon, link the PR number to the pad. One line per PR to the user: icon, link, verdict phrase. Re-arm if anything is still pending.
 
 **Do not close the agent.** Review agents stay running (idle) after publishing so the user can discuss the PR with the agent that has the diff loaded. They are closed in exactly two places: merge cleanup, and refresh sweeps closing the throwaways they spawned themselves.
 
@@ -187,6 +189,8 @@ A verdict can change later, during discussion. The agent updates its own pad and
 ---
 
 ## Review scratchpad naming
+
+Same convention the `review` skill uses for its scratchpad's title (see that skill's scratchpad format):
 
 ```
 PR #[number] Review - [PR title, leading bracketed branch/version tag stripped]

@@ -24,7 +24,7 @@ Covers the whole board. Do **not** loop `gh pr view` per PR.
 Each review pad's first line records what that review took in:
 
 ```
-Reviewed at commit: <short sha> · discussion through: <ISO8601 timestamp>
+- Reviewed at: <short sha> - discussion through <ISO8601 timestamp>
 ```
 
 Read those cheaply — `scratchpad_read(..., mode="content", limit=1)` per pad, or `scratchpad_list(project_id=..., tags=["review"])` first and only read the pads for PRs that look changed.
@@ -36,7 +36,7 @@ Read those cheaply — `scratchpad_read(..., mode="content", limit=1)` per pad, 
   ```
   Count only items newer than the recorded timestamp, and only from humans. Skip bot authors (login ending `[bot]`), pure label/milestone/base churn (bumps `updatedAt` with no comment at all), and any of your own reviews posted back to the PR — re-reviewing because of your own posted review is circular. Nothing survives the filter → skip silently.
 - **Sha matches, no newer discussion** → up to date. Skip. No agent woken.
-- **No `Reviewed at commit:` line** (pads predating the convention) → fall back to timestamps. If the PR's `updatedAt` is newer than the pad's `updated_at`:
+- **No `Reviewed at:` line** (pads predating the convention) → fall back to timestamps. If the PR's `updatedAt` is newer than the pad's `updated_at`:
   ```bash
   gh pr view <number> --repo <OWNER/REPO> --json commits,comments,reviews
   ```
