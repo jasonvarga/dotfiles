@@ -33,7 +33,7 @@ Solo tools are deferred. Load them first:
 ToolSearch("select:mcp__solo__whoami,mcp__solo__list_projects,mcp__solo__select_project")
 ToolSearch("select:mcp__solo__scratchpad_list,mcp__solo__scratchpad_read,mcp__solo__scratchpad_write,mcp__solo__scratchpad_edit,mcp__solo__scratchpad_archive,mcp__solo__scratchpad_find")
 ToolSearch("select:mcp__solo__list_agent_tools,mcp__solo__spawn_agent,mcp__solo__send_input")
-ToolSearch("select:mcp__solo__list_processes,mcp__solo__get_process_status,mcp__solo__get_process_output,mcp__solo__close_process")
+ToolSearch("select:mcp__solo__list_processes,mcp__solo__get_process_status,mcp__solo__get_process_output,mcp__solo__close_process,mcp__solo__rename_process")
 ToolSearch("select:mcp__solo__timer_set,mcp__solo__timer_fire_when_idle_all,mcp__solo__timer_fire_when_idle_any,mcp__solo__timer_list")
 ToolSearch("select:mcp__solo__kv_set,mcp__solo__kv_get,mcp__solo__kv_list,mcp__solo__kv_delete")
 ```
@@ -48,6 +48,7 @@ Then detect everything — **hardcode nothing**:
   kv_set(project_id=<PROJECT_ID>, key="pr_review_orchestrator_process_id", value=<ORCHESTRATOR_PROCESS_ID>)
   ```
   Re-publish whenever you restart under a new id.
+- Rename your own process to exactly `PR Reviews` if it isn't already — `rename_process(process_id=<ORCHESTRATOR_PROCESS_ID>, new_name="PR Reviews")`. solo-companion detects you by that exact name.
 
 **Master scratchpad** — one per project, titled exactly `PR Review Orchestrator — Master Status Table`. Locate it by title, never by a hardcoded id:
 
@@ -155,6 +156,22 @@ Only when the user explicitly asks to open a review for a new PR.
 
 ---
 
+## App-spawned review agents
+
+solo-companion can also spawn a review agent directly, skipping the steps above — it bakes the task into the agent's own initial prompt and never talks to you (Solo's HTTP API has no `send_input`). The agent registers itself instead, as its first action, via a timer:
+
+`Registration: PR #<n> review agent <id> on <model>, spawned by solo-companion. Add a ⏳ row and arm a harvest timer on it.`
+
+On that ping:
+
+1. Resolve `<id>` per the agent registry above — confirm it's `Running` and its name starts with `<n>` before trusting it. The agent has already written its own `agent.pr-<n>` KV entry; you don't need to.
+2. Add a `⏳` row for PR `<n>` (plain, unlinked — see `references/master-pad.md`).
+3. Arm the harvest timer on that id, same as after a spawn of your own. Its body must name the **PR**, not a pad id — no pad exists yet: `body="Verdict harvest: PR <n>, agent <id>. Standard harvest per skill."`
+
+Never send it a task — it already has one baked in. **Never nudge it either**, even if `get_process_status` or a wake shows it idle at registration time — a mid-review agent is often quiet for long stretches (a long shell command, a slow diff read) and idle is a poor signal for "not working" this early. Just add the row and arm the timer; only reach for `references/troubleshooting.md` if the harvest timer fires and there's still no pad. Everything past this point (harvest verification, verdict pings, merge cleanup) is unchanged.
+
+---
+
 ## Harvesting verdicts
 
 Never leave `⏳` rows to be updated when the user prods. After spawning — one PR or a batch — arm an idle-watch timer on yourself:
@@ -227,7 +244,7 @@ Triggers: "reconcile", "check for merged PRs", "clean up", "is the table still a
    ```
    Any tracked PR **missing** from that list → merge cleanup. (`gh pr view <n> --json state,mergedAt` only if you need merged vs. closed.)
 2. `scratchpad_list(project_id=<PROJECT_ID>, tags=["review"])` — any pad named `PR #[number] Review - …` not in the table is a candidate to add.
-3. `list_processes(project_id=<PROJECT_ID>)` — the one place the wholesale listing earns its cost, and the only thing that catches agents the user spawned. Match by `<pr number>` name prefix and `kv_set` every **Running** one, including ones you didn't spawn. Without this, KV drifts permanently and a later miss spawns a duplicate onto an occupied pad.
+3. `list_processes(project_id=<PROJECT_ID>)` — the one place the wholesale listing earns its cost, and the only thing that catches agents the user or solo-companion spawned. Match by `<pr number>` name prefix and `kv_set` every **Running** one, including ones you didn't spawn — app-spawned agents are found the same way, by name prefix, and this is the backstop if a registration ping was ever missed. Without this, KV drifts permanently and a later miss spawns a duplicate onto an occupied pad.
 4. `kv_list(prefix="agent.pr-")` against step 1's list; `kv_delete` any key whose PR is off the board. (No TTL — a long-running agent's entry must never expire under it.)
 5. Update the pad and set `Last reconciled` in Notes to today. Report what changed — rows removed, agents dropped, untracked pads found. If nothing changed, say so in one line; don't re-print the board.
 
