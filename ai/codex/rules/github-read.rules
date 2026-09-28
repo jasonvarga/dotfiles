@@ -1,0 +1,20 @@
+# GitHub CLI commands that inspect remote state without changing it.
+prefix_rule(
+    pattern = ["gh", "pr", ["checks", "diff", "list", "status", "view"]],
+    decision = "allow",
+    match = ["gh pr checks 123", "gh pr diff 123", "gh pr status"],
+    not_match = ["gh pr merge 123", "gh pr review 123 --approve"],
+)
+
+prefix_rule(
+    pattern = ["gh", "issue", ["list", "status", "view"]],
+    decision = "allow",
+    match = ["gh issue view 123", "gh issue list"],
+    not_match = ["gh issue close 123"],
+)
+
+prefix_rule(pattern = ["gh", "repo", ["list", "view"]], decision = "allow")
+prefix_rule(pattern = ["gh", "run", ["list", "view"]], decision = "allow")
+prefix_rule(pattern = ["gh", "workflow", ["list", "view"]], decision = "allow")
+prefix_rule(pattern = ["gh", "release", ["list", "view"]], decision = "allow")
+prefix_rule(pattern = ["gh", "search"], decision = "allow")

@@ -1,0 +1,4 @@
+prefix_rule(pattern=["npx", "vitest", "run"], decision="allow")
+prefix_rule(pattern=["npm", "test"], decision="allow")
+prefix_rule(pattern=["git", "fetch", "origin"], decision="allow")
+prefix_rule(pattern=["jev-review-model"], decision="allow")

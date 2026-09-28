@@ -1,0 +1,24 @@
+model = "gpt-6-luna"
+model_reasoning_effort = "medium"
+
+[projects."/Users/jason/Code/statamic/cms"]
+trust_level = "trusted"
+
+[projects."/Users/jason/.dotfiles"]
+trust_level = "trusted"
+
+[notice.model_migrations]
+"gpt-5.3-codex" = "gpt-5.4"
+"gpt-5.6-luna" = "gpt-6-luna"
+
+[tui]
+theme = "base16-ocean-light"
+screen_reader_detection_done = true
+status_line = ["current-dir", "git-branch", "model-with-reasoning", "context-used"]
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+gpt-6-astra = 4
+
+[mcp_servers.solo]
+command = "/Applications/Solo.app/Contents/MacOS/mcp"

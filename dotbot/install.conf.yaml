@@ -26,6 +26,8 @@
     ~/.claude/CLAUDE.md: ai/claude/CLAUDE.md
     ~/.claude/skills: ai/skills
     ~/.agents/skills: ai/skills
+    ~/.codex/config.toml: ai/codex/config.toml
+    ~/.codex/rules: ai/codex/rules
 
 - shell:
   - description: Hushing login
