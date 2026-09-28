@@ -24,12 +24,12 @@
     "description": "GPT-6 Luna Codex model."
   },
   {
-    "id": "anthropic-opus-5-5-1m",
+    "id": "anthropic-opus-5-5",
     "platform": "Anthropic",
-    "model": "Opus 5.5 (1M context)",
+    "model": "Opus 5.5",
     "surface": "Claude",
     "effort": ["low", "medium", "high", "xhigh", "max"],
-    "description": "Best for everyday, complex tasks; 1M context."
+    "description": "Best for everyday, complex tasks."
   },
   {
     "id": "anthropic-fable-5-1",
@@ -40,9 +40,9 @@
     "description": "Most capable for the hardest and longest-running tasks."
   },
   {
-    "id": "anthropic-sonnet-5",
+    "id": "anthropic-sonnet-5-5",
     "platform": "Anthropic",
-    "model": "Sonnet 5",
+    "model": "Sonnet 5.5",
     "surface": "Claude",
     "effort": ["low", "medium", "high", "xhigh", "max"],
     "description": "Efficient for routine tasks."
