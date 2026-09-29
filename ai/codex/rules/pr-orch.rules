@@ -1,0 +1,11 @@
+# The pr-review-orchestrator script talks to Solo's local HTTP API and GitHub, both of which the sandbox blocks.
+# "allow" only skips the approval prompt: the agent still has to request escalation for it to leave the sandbox.
+prefix_rule(
+    pattern = [[
+        "~/.claude/skills/pr-review-orchestrator/scripts/pr-orch",
+        "/Users/jason/.claude/skills/pr-review-orchestrator/scripts/pr-orch",
+        "~/.agents/skills/pr-review-orchestrator/scripts/pr-orch",
+        "/Users/jason/.agents/skills/pr-review-orchestrator/scripts/pr-orch",
+    ]],
+    decision = "allow",
+)

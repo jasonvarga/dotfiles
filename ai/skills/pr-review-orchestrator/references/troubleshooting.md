@@ -2,26 +2,31 @@
 
 ## The timer is a nudge to go look, never evidence of completion
 
-Treat every wake-up as "something may have finished", and verify. Routine failure modes:
+Treat every wake-up as "something may have finished" and run `board`, which only clears ⏳ once the pad's revision has advanced and its `Reviewed at:` names the requested (or current) head. Routine failure modes:
 
-- **Freshly-spawned agents are reported "already idle" at arming time** — they hadn't picked up their input yet, so the timer excludes them from the wait and can fire long before they're done.
+- **Freshly-spawned agents are reported "already idle" at arming time** — they hadn't picked up their input yet, so the timer excludes them and fires long before they're done.
 - **The timer fires on its `max_wait_ms` deadline** rather than on completion, and says so in the delivered text.
-- **The delivered body arrives truncated to its tail**, so your instructions may reach you as a fragment. If a wake-up looks like a partial sentence, treat it as "harvest the batch I last spawned" and reconstruct the rest from the master table's `⏳` rows.
+- **Delivered bodies arrive truncated to their tail.** Keep bodies short; if a wake-up looks like a fragment, just run `board`.
 
-## A finished review is not a written review
+## A row stays ⏳
 
-An agent can complete its analysis, go idle, and never write its pad. Seen causes: the machine slept mid-write (`API Error: Your computer went to sleep mid-response`), or the task message was truncated and it never started.
+`board` prints one line per ⏳ row: whether a Running agent exists, whether a pad exists, how long ago the review was requested.
 
-When a pad hasn't advanced, check `get_process_output(process_id=...)` before doing anything else:
+- **`NO running agent`** → it died or was closed. If the user doesn't want it redone, `pr-orch clear-pending <n>`; otherwise `spawn` again.
+- **Agent running, nothing landed** → `get_process_output(process_id=...)` before anything else:
+  - **Output shows a completed review** (or a sleep/API error after one) → the findings are still in its context. Send a short "your findings never reached the pad — write it now, including the `Verdict:` and `Reviewed at:` lines, then send your Review landed ping". Re-running the whole review would waste work it already did.
+  - **Output is blank or it never started** → close it and `spawn` again.
+  - **Output shows it asking to switch models** → the model router parked it. Close it and respawn with `--model` set to the model it asked for. Record the near-miss in Notes as calibration.
+  - **Parked on a permission prompt** → tell the user; don't answer it for them.
+- **It landed on a different sha** (a push arrived mid-review) → `board` accepts the current head too. If the head moved again since, run a sweep.
 
-- **Output shows a completed review** (or a sleep/API error after one) → the findings are still in its context. Send a short "your findings never reached the pad — write scratchpad `<id>` now, including the `Verdict:` line and the `Reviewed at:` line". Re-running the whole review would waste work it already did.
-- **Output is blank, or shows a truncated first message** → it never received the task. Re-send it, short, per `references/review-task.md`.
-- **Output shows it asking to switch models** → the model router parked it: message 2 went out without naming a model, or the router disagreed with the model you spawned. Close it and respawn on the model it asked for, naming it this time.
+## `ERROR` lines from `board`
 
-## An agent is Running but nothing is happening
+The script leaves that row as it was and exits non-zero rather than guess.
 
-Running is not working. An agent can be Running and idle but parked — at the `review` skill's model router, or on a permission prompt. Only `get_process_output` shows this. Check it when a nudge produces no pad revision bump.
+- **`no parseable Verdict line`** / **`no parseable Reviewed at line`** → the pad doesn't follow the `review` skill's scratchpad format. Ask its agent (if running) to fix the metadata block, or tell the user.
+- **`ambiguous review pads …`** → more than one pad claims to be PR n's review. The script already ignores pads tagged `second-opinion` and prefers `PR #n Review - <current title>`. Tell the user which pads collide; the fix is to tag the extra one `second-opinion` or rename it so it no longer starts with `PR #n Review - `.
 
 ## Two agents on one PR
 
-The worst failure in this flow and invisible to KV: a KV miss where the user had spawned an agent themselves leads you to spawn a second onto the same pad. Only reconcile's `list_processes` pass catches it. Close the one you spawned, keep the user's, and `kv_set` the survivor.
+`reconcile` flags it with both ids, oldest first. `spawn` and `nudge` refuse to act on that PR until it's resolved. Ask the user which to keep — usually theirs — and close the other.

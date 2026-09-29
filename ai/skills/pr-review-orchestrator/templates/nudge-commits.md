@@ -1,0 +1,1 @@
+New commits were pushed to PR #{{number}} since your review (you reviewed {{oldSha}}, head is now {{newSha}}). Re-review the changes since then, read any new comments too, then update your scratchpad — its `Reviewed at:` line and its `Verdict:` line — and send the orchestrator your "Review landed" ping.

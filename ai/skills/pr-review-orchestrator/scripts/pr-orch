@@ -1,0 +1,826 @@
+#!/usr/bin/env node
+'use strict';
+
+const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const SKILL_DIR = path.resolve(__dirname, '..');
+const MASTER_TITLE = 'PR Review Orchestrator — Master Status Table';
+const MASTER_TAGS = ['index', 'orchestrator', 'pr', 'review'];
+const TABLE_HEADING = '## In-progress reviews';
+const TABLE_HEADER = ['|   | PR | Title |', '| -- | -- | ----- |'];
+const PENDING = '⏳';
+const ICONS = ['✅', '🔴', PENDING];
+const SWEEP_ASK_THRESHOLD = 10;
+
+const USAGE = `Usage: pr-orch <command> [options]
+
+  board [--dry-run] [--mark-refreshed]   Rebuild the master table, print what changed
+  reconcile [--apply]                    Archive pads / close agents of merged or closed PRs, then board
+  sweep-plan [pr...] [--exclude n,n]     List board PRs with new commits or new discussion
+  nudge <pr...>                          Print the re-review text for each PR's running agent, mark it pending
+  spawn <pr> --label "<2-5 words>" [--model opus|sonnet] [--concern "..."] [--refresh]
+  clear-pending <pr...>                  Forget a pending re-review request
+
+Global: --project-id <id> overrides project detection.`;
+
+class Fail extends Error {}
+
+function fail(message) {
+    throw new Fail(message);
+}
+
+function run(cmd, args, { input, allowFail = false } = {}) {
+    const result = spawnSync(cmd, args, {
+        encoding: 'utf8',
+        input,
+        maxBuffer: 256 * 1024 * 1024,
+        env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' },
+    });
+
+    if (result.error) {
+        if (result.error.code === 'ENOENT') fail(`\`${cmd}\` not found on PATH`);
+        throw result.error;
+    }
+
+    if (result.status !== 0 && !allowFail) {
+        const detail = (result.stderr || result.stdout || '').trim().split('\n')[0];
+        fail(`${cmd} ${args.slice(0, 2).join(' ')} failed: ${detail}`);
+    }
+
+    return result;
+}
+
+function solo(args, input) {
+    const result = run('solo', [...args, '--json'], { input, allowFail: true });
+    let out;
+
+    try {
+        out = JSON.parse(result.stdout.trim() || result.stderr);
+    } catch {
+        fail(`solo ${args.slice(0, 2).join(' ')}: ${(result.stderr || result.stdout).trim()}`);
+    }
+
+    if (out.error?.code === 'stale_discovery') {
+        fail('Solo\'s local API is unreachable. If Solo is running, this command is sandboxed without network access (e.g. Codex) — rerun it outside the sandbox. Don\'t tell the user to start Solo.');
+    }
+
+    if (!out.ok) {
+        const error = new Fail(`solo ${args.slice(0, 2).join(' ')}: ${out.error?.message ?? 'failed'}`);
+        error.code = out.error?.code;
+        throw error;
+    }
+
+    return out.data;
+}
+
+function soloPaged(args, key) {
+    const items = [];
+    let offset = 0;
+
+    for (;;) {
+        const data = solo([...args, '--limit', '500', '--offset', String(offset)]);
+        items.push(...data[key]);
+        if (!data.hasMore) return items;
+        offset = data.nextOffset;
+    }
+}
+
+function gh(args) {
+    return JSON.parse(run('gh', args).stdout);
+}
+
+// Context
+
+function parseArgs(argv) {
+    const booleans = new Set(['apply', 'dry-run', 'mark-refreshed', 'refresh', 'help']);
+    const opts = { _: [] };
+
+    for (let i = 0; i < argv.length; i++) {
+        const arg = argv[i];
+        if (!arg.startsWith('--')) {
+            opts._.push(arg);
+            continue;
+        }
+        const [name, inline] = arg.slice(2).split(/=(.*)/s);
+        if (booleans.has(name)) {
+            opts[name] = true;
+        } else {
+            const value = inline ?? argv[++i];
+            if (value === undefined) fail(`--${name} needs a value`);
+            opts[name] = value;
+        }
+    }
+
+    return opts;
+}
+
+function prNumbers(list) {
+    return list.map((value) => {
+        const n = Number(String(value).replace(/^#/, ''));
+        if (!Number.isInteger(n) || n <= 0) fail(`not a PR number: ${value}`);
+        return n;
+    });
+}
+
+function realpath(dir) {
+    try {
+        return fs.realpathSync(dir);
+    } catch {
+        return dir;
+    }
+}
+
+function detectProjectId() {
+    const cwd = realpath(process.cwd());
+    const match = solo(['projects', 'list', '--limit', '500']).projects
+        .filter((p) => p.path)
+        .map((p) => ({ id: p.id, path: realpath(p.path) }))
+        .filter((p) => cwd === p.path || cwd.startsWith(`${p.path}/`))
+        .sort((a, b) => b.path.length - a.path.length)[0];
+
+    if (match) return match.id;
+
+    if (process.env.SOLO_PROCESS_ID) {
+        const data = solo(['processes', 'get', process.env.SOLO_PROCESS_ID]);
+        const projectId = (data.process ?? data).projectId;
+        if (projectId) return projectId;
+    }
+
+    fail(`no Solo project contains ${cwd} — pass --project-id`);
+}
+
+function context(opts) {
+    const projectId = opts['project-id'] ? Number(opts['project-id']) : detectProjectId();
+    const repoInfo = gh(['repo', 'view', '--json', 'nameWithOwner,defaultBranchRef']);
+
+    return {
+        projectId,
+        repo: repoInfo.nameWithOwner,
+        defaultBranch: repoInfo.defaultBranchRef?.name,
+        pwd: process.cwd(),
+    };
+}
+
+// Pads, agents, PRs
+
+function slug(name) {
+    const kebab = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return kebab.slice(0, 20).replace(/-+$/, '');
+}
+
+function padUrl(ctx, pad) {
+    return `solo://proj/${ctx.projectId}/scratchpad/${slug(pad.name)}--${pad.id}`;
+}
+
+function stripTag(title) {
+    return title.replace(/^\[[^\]]*\]\s*/, '');
+}
+
+function listReviewPads(ctx) {
+    const byPr = new Map();
+
+    for (const pad of soloPaged(['scratchpads', 'list', '--project-id', String(ctx.projectId), '--tag', 'review'], 'scratchpads')) {
+        const m = pad.name.match(/^PR #(\d+)\b/);
+        if (!m || pad.archived) continue;
+        const n = Number(m[1]);
+        if (!byPr.has(n)) byPr.set(n, []);
+        byPr.get(n).push(pad);
+    }
+
+    return byPr;
+}
+
+function listPrAgents(ctx) {
+    const byPr = new Map();
+
+    for (const proc of soloPaged(['processes', 'list', '--project-id', String(ctx.projectId)], 'processes')) {
+        const m = proc.name?.match(/^(\d+) - /);
+        if (!m || proc.kind !== 'agent') continue;
+        const n = Number(m[1]);
+        if (!byPr.has(n)) byPr.set(n, []);
+        byPr.get(n).push({ ...proc, running: proc.status === 'running' });
+    }
+
+    return byPr;
+}
+
+function running(agents) {
+    return (agents ?? []).filter((a) => a.running);
+}
+
+function openPrs(ctx) {
+    const limit = 1000;
+    const prs = gh(['pr', 'list', '--repo', ctx.repo, '--state', 'open', '--limit', String(limit),
+        '--json', 'number,title,headRefOid,updatedAt,baseRefName']);
+    if (prs.length >= limit) fail(`${limit}+ open PRs — can't tell merged from unlisted`);
+
+    return new Map(prs.map((pr) => [pr.number, pr]));
+}
+
+function canonicalPad(n, pads, title) {
+    let candidates = (pads ?? []).filter((p) => !p.tags.includes('second-opinion'));
+    if (candidates.length <= 1) return { pad: candidates[0] ?? null };
+
+    const narrow = (test) => {
+        const kept = candidates.filter(test);
+        if (kept.length) candidates = kept;
+    };
+
+    narrow((p) => p.name.startsWith(`PR #${n} Review - `));
+    if (candidates.length > 1 && title) narrow((p) => p.name === `PR #${n} Review - ${stripTag(title)}`);
+    if (candidates.length > 1) return { error: `ambiguous review pads ${candidates.map((p) => p.id).join(', ')}` };
+
+    return { pad: candidates[0] };
+}
+
+function readPad(ctx, id, limit) {
+    const args = ['scratchpads', 'read', String(id), '--project-id', String(ctx.projectId)];
+    if (limit) args.push('--limit', String(limit));
+    return solo(args).scratchpad;
+}
+
+function parsePad(content) {
+    const field = (label) => content.match(new RegExp(`^[ \\t]*(?:[-*][ \\t]*)?${label}:[ \\t]*(.+)$`, 'mi'))?.[1].trim();
+    const verdict = field('Verdict');
+    let icon = null;
+
+    if (verdict) {
+        if (verdict.startsWith('✅')) icon = '✅';
+        else if (verdict.startsWith('🔴')) icon = '🔴';
+        else if (/needs changes/i.test(verdict)) icon = '🔴';
+        else if (/mergeable/i.test(verdict)) icon = '✅';
+    }
+
+    const reviewed = content.match(/^[ \t]*(?:[-*][ \t]*)?Reviewed at(?: commit)?:[ \t]*`?([0-9a-f]{7,40})\b`?(?:.*?discussion through:?[ \t]*(\d{4}-\d{2}-\d{2}(?:T[\d:.]+Z?)?))?/mi);
+
+    return {
+        verdict,
+        icon,
+        sha: reviewed?.[1] ?? null,
+        through: reviewed?.[2] ?? null,
+        model: field('Review model') ?? null,
+    };
+}
+
+function shaMatch(a, b) {
+    return Boolean(a && b) && (a.startsWith(b) || b.startsWith(a));
+}
+
+function normaliseModel(raw) {
+    const lower = (raw ?? '').toLowerCase();
+    if (lower.includes('opus')) return 'opus';
+    if (lower.includes('sonnet')) return 'sonnet';
+    return null;
+}
+
+// Pending re-review requests: set by spawn/nudge, cleared by board once the pad catches up.
+
+function statePath(ctx) {
+    const base = process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache');
+    return path.join(base, 'pr-review-orchestrator', `project-${ctx.projectId}.json`);
+}
+
+function loadState(ctx) {
+    try {
+        return { pending: {}, ...JSON.parse(fs.readFileSync(statePath(ctx), 'utf8')) };
+    } catch (e) {
+        if (e.code === 'ENOENT') return { pending: {} };
+        throw e;
+    }
+}
+
+function saveState(ctx, state) {
+    fs.mkdirSync(path.dirname(statePath(ctx)), { recursive: true });
+    fs.writeFileSync(statePath(ctx), `${JSON.stringify(state, null, 2)}\n`);
+}
+
+function age(iso) {
+    const minutes = Math.round((Date.now() - Date.parse(iso)) / 60000);
+    return minutes < 90 ? `${minutes}m` : `${Math.round(minutes / 60)}h`;
+}
+
+// Master pad
+
+function findMaster(ctx, { create }) {
+    const found = soloPaged(['scratchpads', 'list', '--project-id', String(ctx.projectId), '--query', MASTER_TITLE], 'scratchpads')
+        .filter((p) => p.name === MASTER_TITLE && !p.archived);
+
+    if (found.length > 1) fail(`${found.length} pads titled "${MASTER_TITLE}": ${found.map((p) => p.id).join(', ')}`);
+    if (found.length) return readPad(ctx, found[0].id);
+    if (!create) return null;
+
+    const content = [
+        'Verdict per open PR under review. The PR number links to that review\'s scratchpad. Procedure lives in the `pr-review-orchestrator` skill, not here.',
+        '',
+        '**Verdict legend:** ✅ Mergeable · 🔴 Needs changes · ⏳ Review in progress',
+        '',
+        TABLE_HEADING,
+        ...TABLE_HEADER,
+        '',
+        '## Notes',
+        '',
+        `* Repo: ${ctx.repo} (Solo project ${ctx.projectId}).`,
+        '',
+    ].join('\n');
+    const args = ['scratchpads', 'create', '--project-id', String(ctx.projectId), '--name', MASTER_TITLE, '--content-file', '-'];
+    for (const tag of MASTER_TAGS) args.push('--tag', tag);
+
+    return solo(args, content).scratchpad;
+}
+
+function parseTable(content) {
+    const rows = new Map();
+
+    for (const line of sectionLines(content)) {
+        const m = line.match(/^\|\s*(✅|🔴|⏳)\s*\|\s*(?:\[#(\d+)\]|#(\d+))/u);
+        if (m) rows.set(Number(m[2] ?? m[3]), { icon: m[1], line });
+    }
+
+    return rows;
+}
+
+function sectionBounds(lines) {
+    const start = lines.findIndex((l) => l.trim() === TABLE_HEADING);
+    if (start === -1) fail(`master pad has no "${TABLE_HEADING}" heading`);
+    let end = lines.findIndex((l, i) => i > start && /^#{1,2}\s/.test(l));
+    if (end === -1) end = lines.length;
+
+    return [start, end];
+}
+
+function sectionLines(content) {
+    const lines = content.split('\n');
+    const [start, end] = sectionBounds(lines);
+    return lines.slice(start + 1, end);
+}
+
+function replaceTable(content, tableLines) {
+    const lines = content.split('\n');
+    const [start, end] = sectionBounds(lines);
+
+    return [...lines.slice(0, start + 1), ...tableLines, '', ...lines.slice(end)].join('\n');
+}
+
+function stampNote(content, label, date) {
+    const pattern = new RegExp(`(${label}:\\s*)\\d{4}-\\d{2}-\\d{2}`);
+    if (pattern.test(content)) return content.replace(pattern, `$1${date}`);
+
+    const lines = content.split('\n');
+    const notes = lines.findIndex((l) => /^##\s+Notes\s*$/.test(l));
+    if (notes === -1) return content;
+    let end = lines.findIndex((l, i) => i > notes && /^#{1,2}\s/.test(l));
+    if (end === -1) end = lines.length;
+    while (end > notes + 1 && lines[end - 1].trim() === '') end--;
+    lines.splice(end, 0, `* ${label}: ${date}`);
+
+    return lines.join('\n');
+}
+
+function writeMaster(ctx, master, transform) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+        const next = transform(master.content);
+        if (next === master.content) return master;
+
+        try {
+            return solo(['scratchpads', 'update', String(master.id), '--project-id', String(ctx.projectId),
+                '--expected-revision', String(master.revision), '--content-file', '-'], next).scratchpad;
+        } catch (e) {
+            if (e.code !== 'precondition_failed') throw e;
+            master = readPad(ctx, master.id);
+        }
+    }
+
+    fail('master pad kept changing under the write — try again');
+}
+
+// Commands
+
+function board(ctx, opts = {}) {
+    const master = findMaster(ctx, { create: !opts['dry-run'] });
+    const previous = master ? parseTable(master.content) : new Map();
+    const pads = listReviewPads(ctx);
+    const agents = listPrAgents(ctx);
+    const open = openPrs(ctx);
+    const state = loadState(ctx);
+    const errors = [];
+    const waiting = [];
+    const rows = [];
+
+    const onBoard = [...new Set([...pads.keys(), ...[...agents].filter(([, a]) => running(a).length).map(([n]) => n)])]
+        .filter((n) => open.has(n))
+        .sort((a, b) => b - a);
+
+    for (const n of onBoard) {
+        const pr = open.get(n);
+        const keep = (why) => {
+            errors.push(`#${n}: ${why} — row left as it was`);
+            if (previous.has(n)) rows.push({ n, ...previous.get(n) });
+        };
+
+        const { pad, error } = canonicalPad(n, pads.get(n), pr.title);
+        if (error) {
+            keep(error);
+            continue;
+        }
+
+        if (!pad && !running(agents.get(n)).length) continue;
+
+        let icon = PENDING;
+        const request = state.pending[n];
+
+        if (pad) {
+            const meta = parsePad(readPad(ctx, pad.id, 30).content);
+            if (!meta.icon) {
+                keep(`pad ${pad.id} has no parseable Verdict line (${JSON.stringify(meta.verdict ?? null)})`);
+                continue;
+            }
+
+            if (request) {
+                if (!meta.sha) {
+                    keep(`pad ${pad.id} has no parseable Reviewed at line, can't tell if the requested re-review landed`);
+                    continue;
+                }
+                const landed = pad.revision > request.revision
+                    && (shaMatch(meta.sha, request.sha) || shaMatch(meta.sha, pr.headRefOid));
+                if (landed) delete state.pending[n];
+            }
+
+            if (!state.pending[n]) icon = meta.icon;
+        }
+
+        if (icon === PENDING) {
+            const agent = running(agents.get(n))[0];
+            const since = request ? `, requested ${age(request.at)} ago` : '';
+            waiting.push(`⏳ #${n}: ${agent ? `agent ${agent.id} running` : 'NO running agent'}${pad ? '' : ', no pad yet'}${since}`);
+        }
+
+        const link = pad ? `[#${n}](${padUrl(ctx, pad)})` : `#${n}`;
+        const title = stripTag(pr.title).replace(/\|/g, '\\|');
+        rows.push({ n, icon, line: `| ${icon} | ${link} | ${title} |` });
+    }
+
+    for (const n of Object.keys(state.pending).map(Number)) {
+        if (!open.has(n)) delete state.pending[n];
+    }
+
+    const changes = [];
+    const current = new Map(rows.map((r) => [r.n, r]));
+
+    const retitled = [];
+
+    for (const row of rows) {
+        const before = previous.get(row.n);
+        if (!before) changes.push(`added #${row.n} ${row.icon}`);
+        else if (before.icon !== row.icon) changes.push(`#${row.n} ${before.icon}→${row.icon}`);
+        else if (before.line !== row.line) retitled.push(`#${row.n}`);
+    }
+
+    if (retitled.length) changes.push(`title/link refreshed: ${retitled.join(' ')}`);
+
+    for (const n of previous.keys()) {
+        if (current.has(n)) continue;
+        let why = 'no pad or running agent';
+        if (!open.has(n)) why = gh(['pr', 'view', String(n), '--repo', ctx.repo, '--json', 'state']).state.toLowerCase();
+        changes.push(`removed #${n} (${why})`);
+    }
+
+    const stale = [...new Set([...pads.keys(), ...agents.keys()])].filter((n) => !open.has(n));
+
+    let written = master;
+    if (!opts['dry-run']) {
+        const today = new Date().toISOString().slice(0, 10);
+        written = writeMaster(ctx, master, (content) => {
+            let next = replaceTable(content, [...TABLE_HEADER, ...rows.map((r) => r.line)]);
+            if (opts['mark-reconciled']) next = stampNote(next, 'Last reconciled', today);
+            if (opts['mark-refreshed']) next = stampNote(next, 'Last refreshed', today);
+            return next;
+        });
+        saveState(ctx, state);
+    }
+
+    const counts = ICONS.map((icon) => `${icon} ${rows.filter((r) => r.icon === icon).length}`).join(' · ');
+    const where = written ? padUrl(ctx, written) : '(no master pad yet)';
+    console.log(`board${opts['dry-run'] ? ' (dry run, not written)' : ''}: ${counts} — ${rows.length} rows — ${where}`);
+    console.log(changes.length ? changes.join('\n') : 'no changes');
+    if (waiting.length) console.log(waiting.join('\n'));
+    if (stale.length) console.log(`merged/closed PRs still with pads or agents: ${stale.map((n) => `#${n}`).join(' ')} — run reconcile`);
+    for (const error of errors) console.log(`ERROR ${error}`);
+
+    return errors.length ? 2 : 0;
+}
+
+function reconcile(ctx, opts) {
+    const pads = listReviewPads(ctx);
+    const agents = listPrAgents(ctx);
+    const open = openPrs(ctx);
+    const state = loadState(ctx);
+    const lines = [];
+
+    const closed = [...new Set([...pads.keys(), ...agents.keys()])].filter((n) => !open.has(n)).sort((a, b) => b - a);
+
+    for (const n of closed) {
+        const pr = gh(['pr', 'view', String(n), '--repo', ctx.repo, '--json', 'state,baseRefName']);
+        if (pr.state === 'OPEN') {
+            lines.push(`#${n}: missing from the open list but open on GitHub — skipped`);
+            continue;
+        }
+
+        const padIds = (pads.get(n) ?? []).map((p) => p.id);
+        const procs = agents.get(n) ?? [];
+        const actions = [];
+        if (padIds.length) actions.push(`archive pad${padIds.length > 1 ? 's' : ''} ${padIds.join(', ')}`);
+        if (procs.length) actions.push(`close agent${procs.length > 1 ? 's' : ''} ${procs.map((p) => `${p.id}${p.running ? '' : ` (${p.status})`}`).join(', ')}`);
+        const base = pr.baseRefName && pr.baseRefName !== ctx.defaultBranch ? ` [targeted ${pr.baseRefName} — drop from Notes if listed there]` : '';
+        lines.push(`#${n} ${pr.state.toLowerCase()}: ${actions.join('; ')}${base}`);
+
+        if (opts.apply) {
+            for (const id of padIds) solo(['scratchpads', 'archive', String(id), '--project-id', String(ctx.projectId)]);
+            for (const proc of procs) solo(['processes', 'delete', String(proc.id), '--project-id', String(ctx.projectId), '--confirm-stop-running']);
+            delete state.pending[n];
+        }
+    }
+
+    for (const [n, list] of [...agents].sort(([a], [b]) => b - a)) {
+        const live = running(list);
+        if (live.length < 2 || !open.has(n)) continue;
+        const who = live.sort((a, b) => a.id - b.id).map((a) => `${a.id} "${a.name}"`).join(', ');
+        lines.push(`WARN #${n} has ${live.length} running agents: ${who} (oldest first) — not closed, ask which to keep`);
+    }
+
+    if (opts.apply) saveState(ctx, state);
+
+    const verb = opts.apply ? 'reconcile' : 'reconcile (plan only — rerun with --apply)';
+    console.log(`${verb}: ${closed.length ? `${closed.length} merged/closed` : 'nothing to clean up'}`);
+    if (lines.length) console.log(lines.join('\n'));
+
+    return board(ctx, { 'mark-reconciled': opts.apply });
+}
+
+// REST rather than `gh pr view`, which strips the [bot] suffix and omits inline review comments.
+// The viewer's own reviews and inline comments are skipped: re-reviewing because of them is circular.
+function humanActivitySince(ctx, n, since, viewer) {
+    const after = Date.parse(since);
+    let count = 0;
+
+    for (const [endpoint, field] of [['issues/N/comments', 'created_at'], ['pulls/N/comments', 'created_at'], ['pulls/N/reviews', 'submitted_at']]) {
+        const out = run('gh', ['api', '--paginate', `repos/${ctx.repo}/${endpoint.replace('N', n)}`,
+            '-q', `.[] | [.user.login, .user.type, .${field}] | @tsv`]).stdout;
+
+        for (const line of out.split('\n').filter(Boolean)) {
+            const [login, type, at] = line.split('\t');
+            if (type === 'Bot' || login.endsWith('[bot]')) continue;
+            if (endpoint.startsWith('pulls') && login === viewer) continue;
+            if (Date.parse(at) > after) count++;
+        }
+    }
+
+    return count;
+}
+
+function classify(ctx, n, pr, pad, meta, viewer) {
+    if (meta.sha) {
+        if (!shaMatch(meta.sha, pr.headRefOid)) return { kind: 'commits', oldSha: meta.sha };
+        if (meta.through && Date.parse(pr.updatedAt) > Date.parse(meta.through)
+            && humanActivitySince(ctx, n, meta.through, viewer())) {
+            return { kind: 'discussion', since: meta.through };
+        }
+        return null;
+    }
+
+    if (Date.parse(pr.updatedAt) <= Date.parse(pad.updatedAt)) return null;
+
+    const data = gh(['pr', 'view', String(n), '--repo', ctx.repo, '--json', 'commits']);
+    const last = data.commits.at(-1);
+    if (last && Date.parse(last.committedDate) > Date.parse(pad.updatedAt)) return { kind: 'commits', oldSha: 'an unrecorded sha' };
+    if (humanActivitySince(ctx, n, pad.updatedAt, viewer())) return { kind: 'discussion', since: pad.updatedAt };
+
+    return null;
+}
+
+function lazyViewer() {
+    let login;
+    return () => (login ??= run('gh', ['api', 'user', '-q', '.login']).stdout.trim());
+}
+
+function sweepPlan(ctx, opts) {
+    const pads = listReviewPads(ctx);
+    const agents = listPrAgents(ctx);
+    const open = openPrs(ctx);
+    const state = loadState(ctx);
+    const exclude = new Set(opts.exclude ? prNumbers(String(opts.exclude).split(',')) : []);
+    const viewer = lazyViewer();
+    const named = prNumbers(opts._);
+
+    const tracked = [...new Set([...pads.keys(), ...[...agents].filter(([, a]) => running(a).length).map(([n]) => n)])];
+    const scope = (named.length ? named : tracked).filter((n) => !exclude.has(n)).sort((a, b) => b - a);
+
+    const lists = { commits: [], discussion: [], merged: [] };
+    const skipped = [];
+    const actions = [];
+
+    for (const n of scope) {
+        const pr = open.get(n);
+        if (!pr) {
+            if (pads.has(n) || agents.has(n)) lists.merged.push(n);
+            else skipped.push(`#${n} not open`);
+            continue;
+        }
+
+        const { pad, error } = canonicalPad(n, pads.get(n), pr.title);
+        if (error) {
+            skipped.push(`#${n} ${error}`);
+            continue;
+        }
+        if (!pad) {
+            skipped.push(`#${n} no pad yet`);
+            continue;
+        }
+        if (state.pending[n]) {
+            skipped.push(`#${n} re-review already pending`);
+            continue;
+        }
+
+        const moved = classify(ctx, n, pr, pad, parsePad(readPad(ctx, pad.id, 30).content), viewer);
+        if (!moved) continue;
+
+        lists[moved.kind].push(n);
+        const agent = running(agents.get(n))[0];
+        actions.push(agent ? `#${n} nudge (agent ${agent.id})` : `#${n} spawn --refresh (no running agent): ${stripTag(pr.title)}`);
+    }
+
+    const fmt = (list) => (list.length ? list.map((n) => `#${n}`).join(' ') : '—');
+    console.log(`sweep over ${scope.length} PRs${exclude.size ? ` (excluded ${[...exclude].map((n) => `#${n}`).join(' ')})` : ''}`);
+    console.log(`new commits (${lists.commits.length}): ${fmt(lists.commits)}`);
+    console.log(`new discussion (${lists.discussion.length}): ${fmt(lists.discussion)}`);
+    console.log(`merged/closed (${lists.merged.length}): ${fmt(lists.merged)}${lists.merged.length ? ' — reconcile --apply' : ''}`);
+    if (skipped.length) console.log(`skipped: ${skipped.join('; ')}`);
+    if (actions.length) console.log(actions.join('\n'));
+    if (actions.length > SWEEP_ASK_THRESHOLD) console.log(`${actions.length} to do — over ${SWEEP_ASK_THRESHOLD}, ask which before starting`);
+
+    return 0;
+}
+
+function template(name, vars) {
+    const text = fs.readFileSync(path.join(SKILL_DIR, 'templates', `${name}.md`), 'utf8');
+    const filled = text.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+        if (!(key in vars)) fail(`template ${name}: no value for {{${key}}}`);
+        return vars[key];
+    });
+
+    return filled.replace(/\s+$/, '');
+}
+
+function nudge(ctx, opts) {
+    const targets = prNumbers(opts._);
+    if (!targets.length) fail('nudge needs at least one PR number');
+
+    const pads = listReviewPads(ctx);
+    const agents = listPrAgents(ctx);
+    const open = openPrs(ctx);
+    const state = loadState(ctx);
+    const viewer = lazyViewer();
+    const out = [];
+
+    for (const n of targets) {
+        const pr = open.get(n);
+        if (!pr) {
+            out.push(`#${n}: not open — skipped`);
+            continue;
+        }
+
+        const live = running(agents.get(n));
+        if (live.length !== 1) {
+            out.push(`#${n}: ${live.length ? `${live.length} running agents, resolve first` : 'no running agent — spawn --refresh instead'}`);
+            continue;
+        }
+
+        const { pad, error } = canonicalPad(n, pads.get(n), pr.title);
+        if (error || !pad) {
+            out.push(`#${n}: ${error ?? 'no pad yet'} — skipped`);
+            continue;
+        }
+
+        const moved = classify(ctx, n, pr, pad, parsePad(readPad(ctx, pad.id, 30).content), viewer);
+        if (!moved) {
+            out.push(`#${n}: up to date — skipped`);
+            continue;
+        }
+
+        const text = moved.kind === 'commits'
+            ? template('nudge-commits', { number: n, oldSha: moved.oldSha, newSha: pr.headRefOid.slice(0, 7) })
+            : template('nudge-discussion', { number: n, repo: ctx.repo, since: moved.since });
+
+        state.pending[n] = { sha: pr.headRefOid, revision: pad.revision, at: new Date().toISOString() };
+        out.push(`#${n} → send_input to agent ${live[0].id} (${moved.kind}):\n${text}`);
+    }
+
+    saveState(ctx, state);
+    console.log(out.join('\n\n'));
+
+    return board(ctx);
+}
+
+function pickModel(ctx, n, pr, meta, requested) {
+    const fromPad = normaliseModel(meta?.model);
+    if (fromPad) return { model: fromPad, source: `pad's Review model: ${meta.model}`, decided: true };
+
+    if (requested) {
+        const model = normaliseModel(requested);
+        if (!model) fail(`--model must be opus or sonnet, got ${requested}`);
+        return { model, source: 'requested', decided: true };
+    }
+
+    const router = run('bash', ['-c', 'set -o pipefail; gh pr diff "$1" --repo "$2" | jev-review-model', '_', String(n), ctx.repo], { allowFail: true });
+    const verdict = router.status === 0 ? router.stdout.trim().split('\n')[0].trim().toLowerCase() : '';
+    if (verdict === 'opus') return { model: 'opus', source: 'jev-review-model', decided: true };
+    if (verdict === 'sonnet' || verdict === 'either') return { model: 'sonnet', source: `jev-review-model: ${verdict}`, decided: true };
+
+    const lines = pr.additions + pr.deletions;
+    const model = lines > 500 || pr.changedFiles > 15 ? 'opus' : 'sonnet';
+    const why = (router.stderr || router.stdout || '').trim().split('\n')[0] || `exit ${router.status}`;
+
+    return { model, source: `size fallback, ${lines} lines / ${pr.changedFiles} files; router unavailable: ${why}`, decided: false };
+}
+
+function spawn(ctx, opts) {
+    const [n, ...extra] = prNumbers(opts._);
+    if (!n || extra.length) fail('spawn takes exactly one PR number');
+
+    const label = (opts.label ?? '').trim();
+    if (!label) fail('spawn needs --label "<2-5 word topic>"');
+    if (label.split(/\s+/).length > 5 || label.length > 32 || /^[#\d]/.test(label)) {
+        fail(`label "${label}" should be a plain 2-5 word topic under 32 chars, no PR number or #`);
+    }
+
+    const pr = gh(['pr', 'view', String(n), '--repo', ctx.repo, '--json', 'state,title,headRefOid,additions,deletions,changedFiles']);
+    if (pr.state !== 'OPEN') fail(`#${n} is ${pr.state.toLowerCase()} — not spawning`);
+
+    const live = running(listPrAgents(ctx).get(n));
+    if (live.length) fail(`#${n} already has a running agent: ${live.map((a) => `${a.id} "${a.name}"`).join(', ')}`);
+
+    const { pad, error } = canonicalPad(n, listReviewPads(ctx).get(n), pr.title);
+    if (error) fail(`#${n}: ${error}`);
+    const meta = pad ? parsePad(readPad(ctx, pad.id, 30).content) : null;
+
+    const choice = pickModel(ctx, n, pr, meta, opts.model);
+    const toolName = `Claude ${choice.model[0].toUpperCase()}${choice.model.slice(1)}`;
+    const tool = solo(['agents', 'list']).agentTools.find((t) => t.enabled && t.name === toolName);
+    if (!tool) fail(`no enabled Solo agent tool named "${toolName}"`);
+
+    const vars = { number: n, repo: ctx.repo, pwd: ctx.pwd, projectId: ctx.projectId, title: stripTag(pr.title) };
+    const task = template('review-task', {
+        ...vars,
+        modelClause: choice.decided ? ` Use ${choice.model} for this review — the model fit is already decided, so skip the model router.` : '',
+        refresh: opts.refresh || pad ? `\n${template('refresh-line', vars)}\n` : '',
+        concern: opts.concern ? `\nThe user raised this concern when asking for the review: ${String(opts.concern).replace(/\s+/g, ' ').trim()}\n` : '',
+    });
+
+    const proc = solo(['processes', 'spawn', '--project-id', String(ctx.projectId), '--kind', 'agent',
+        '--agent-tool-id', String(tool.id), '--name', `${n} - ${label}`, '--arg', task]).process;
+
+    const state = loadState(ctx);
+    state.pending[n] = { sha: pr.headRefOid, revision: pad?.revision ?? 0, at: new Date().toISOString() };
+    saveState(ctx, state);
+
+    console.log(`spawned #${n} → agent ${proc.id} "${proc.name}" on ${choice.model} (${choice.source})${pad ? `, catching up pad ${padUrl(ctx, pad)}` : ''}`);
+
+    return board(ctx);
+}
+
+function clearPending(ctx, opts) {
+    const targets = prNumbers(opts._);
+    const state = loadState(ctx);
+    for (const n of targets) delete state.pending[n];
+    saveState(ctx, state);
+    console.log(`cleared pending: ${targets.map((n) => `#${n}`).join(' ') || '—'}`);
+
+    return board(ctx);
+}
+
+function main() {
+    const [command, ...rest] = process.argv.slice(2);
+    const opts = parseArgs(rest);
+
+    if (!command || command === 'help' || opts.help) {
+        console.log(USAGE);
+        return 0;
+    }
+
+    const commands = { board, reconcile, 'sweep-plan': sweepPlan, nudge, spawn, 'clear-pending': clearPending };
+    if (!commands[command]) fail(`unknown command "${command}"\n\n${USAGE}`);
+
+    run('solo', ['--version']);
+
+    return commands[command](context(opts), opts);
+}
+
+try {
+    process.exitCode = main();
+} catch (e) {
+    if (!(e instanceof Fail)) throw e;
+    console.error(`pr-orch: ${e.message}`);
+    process.exitCode = 1;
+}
