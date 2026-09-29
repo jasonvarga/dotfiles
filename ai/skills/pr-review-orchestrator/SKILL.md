@@ -46,9 +46,9 @@ Agents are found by name. **Every review agent must be named `<pr number> - <lab
 ## What to run when
 
 - **Agent ping** — `Review landed: PR #n` or `Verdict change: PR #n` → `pr-orch board`. Report the changed rows only.
-- **`Registration: PR #n review agent <id> …`** (from a solo-companion-spawned agent) → `pr-orch board`, then arm the backstop below on `<id>`. It already has its task — never send it one, and never nudge it for being idle this early.
 - **Agent relays a state change** — `PR #n update: merged` or `closed` → `pr-orch reconcile --apply`. `pushed a fix` → `pr-orch nudge <n>`, then send the printed text.
 - **Open a review** (only when asked) → `pr-orch spawn <n> --label "<label>"`. The label is a plain 2–5-word topic you derive from the title — never the raw title, no version tag, no boilerplate (`Link fieldtype`, `PDF viewer`). Add `--model opus|sonnet` only if the user named a model, and `--concern "…"` only for a concern the user stated. The script picks the model (an existing pad's `Review model:` wins, then `--model`, then `jev-review-model`, then a size fallback), writes the task, and gives it to the agent as its initial prompt. Then arm a backstop on yourself: `timer_fire_when_idle_all(processes=[<ids>], max_wait_ms=900000, delivery_process_id=<you>, body="Backstop: PRs <numbers>")`. When it fires, `board`; a row still ⏳ → `references/troubleshooting.md`.
+- **Re-review one PR** (`Re-review PR #n`) — even if it hasn't moved. No running agent → `pr-orch spawn <n> --label "<label>"`; the existing pad makes it a catch-up review, and the pad's model wins. Then arm the backstop as above. A running agent → `pr-orch nudge <n>` and send the printed text; if it says `up to date`, tell the user rather than forcing it.
 - **Reconcile / "clean up" / "status report"** → `pr-orch reconcile --apply`. It archives pads and closes agents of merged/closed PRs, and flags two Running agents on one PR (ask which to keep; never close either unasked). Relay any `targeted <branch>` hint by fixing Notes.
 - **Refresh / sweep / "anything updated?"** → `references/refresh-sweep.md`.
 
