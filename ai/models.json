@@ -1,19 +1,19 @@
 [
   {
+    "id": "openai-gpt-6-1-sol",
+    "platform": "OpenAI",
+    "model": "gpt-6.1-sol",
+    "surface": "Codex",
+    "effort": ["low", "medium", "high", "xhigh", "max", "ultra"],
+    "description": "Latest workhorse model for coding and everyday work."
+  },
+  {
     "id": "openai-gpt-6-astra",
     "platform": "OpenAI",
     "model": "gpt-6-astra",
     "surface": "Codex",
     "effort": ["low", "medium", "high", "xhigh", "max", "ultra"],
     "description": "Most capable model for complex, demanding work."
-  },
-  {
-    "id": "openai-gpt-6-sol",
-    "platform": "OpenAI",
-    "model": "gpt-6-sol",
-    "surface": "Codex",
-    "effort": ["low", "medium", "high", "xhigh", "max", "ultra"],
-    "description": "GPT-6 Sol Codex model."
   },
   {
     "id": "openai-gpt-6-luna",
