@@ -100,11 +100,24 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
    - **Breaking changes** – Do APIs change? Are they backwards-compatible? Things like method signature changes are breaking. Unacceptable in a minor release.
    - **Security issues** — Injection, auth bypass, data exposure, XSS
    - **Missing tests** — Are new code paths tested? Are edge cases covered?
+   - **Reversibility (door type)** — Classify the PR as a **one-way door** or **two-way door** (see step 8). Decide this early, since it sets how hard to scrutinize everything else.
    - **Usefulness** – Is this PR even a good idea? Is it worth the effort?
    - **Consistency** – Does this follow the same style/pattern as existing code/features?
    - **Other concerns** — Performance, maintainability, missing localization
 
-8. **Classify everything you found** as a Finding, an Observation, or a Highlight. The test is not how interesting the issue is or how confident you are — it is what happens if the PR merges exactly as it stands, and whether there's any latent concern attached at all.
+8. **Classify the door type, then classify everything you found** as a Finding, an Observation, or a Highlight.
+
+   **Door type — how hard is this to undo once shipped?**
+   - **One-way door** — hard or impossible to revert cleanly once released. Users, integrators, or stored data come to depend on it. Examples: new or changed public API (methods, classes, config keys, events, hooks, routes, CLI flags, template tags), new user-facing features, anything documented, migrations and data shape changes, file/storage formats, serialized or cached formats, behavior others will build on.
+   - **Two-way door** — safe to revert if it turns out wrong. Nothing external depends on it. Examples: internal/private methods, refactors behind an unchanged public interface, bug fixes to internal logic, styling, tests, docs, dev tooling.
+   - A PR that mixes both is a **one-way door** — one irreversible piece is enough. Name the piece that makes it so.
+   - Judge by what the *merged* change commits the project to, not by diff size. A one-line change to a public signature is a one-way door; a 2,000-line private rewrite may not be.
+
+   **Door type calibrates scrutiny; it never changes the verdict scale.**
+   - **One-way door** — raise the bar. Scrutinize naming, signatures, defaults, extensibility, edge-case behavior, docs, and test coverage of the contract, because they get locked in. Things that would be Observations on a two-way door (awkward naming, a questionable default, a missing edge-case test on the new surface) become Findings here, since fixing them after release is a breaking change.
+   - **Two-way door** — lower the bar. Don't hold the PR for taste, polish, or speculative concerns; if it's wrong it can be reverted. Nits essentially don't apply (a Nit requires a one-way door by definition). Real bugs, security issues, and red CI are still Findings regardless of door type.
+
+   Now classify everything you found as a Finding, an Observation, or a Highlight. The test is not how interesting the issue is or how confident you are — it is what happens if the PR merges exactly as it stands, and whether there's any latent concern attached at all.
 
    **Findings — merging as-is hurts.** Something is broken, unsafe, or regressive, or the fix is meaningfully more expensive after merge than before it.
    - **Critical** — must fix. Bugs, security holes, breaking changes, data loss, red/missing CI, merge conflicts.
@@ -150,6 +163,15 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
 
    This line matters because the model is otherwise unrecoverable after the fact — a review written to a file or scratchpad carries no record of what produced it, and the process it ran in eventually goes away. Include it even when the review is presented only in the session. When a re-review replaces an earlier one, the line reflects the models behind the review as it now stands, not the history.
 
+   **Record the door type**, on its own line directly under the review model, label only:
+
+   ```
+   Door: One-way
+   Door: Two-way
+   ```
+
+   The reason for the classification is not part of this line. In a scratchpad it goes at the end of the Summary (step 10); in the session, state it in one sentence after the verdict block.
+
    **Then Findings**, ordered by severity. File and line, what's wrong, suggested fix where you have one.
 
    **Then Observations**, one line each. No severity labels, no code blocks, no suggested-fix blocks. If an item needs more than a line to explain, it's probably a Finding; if it isn't, cut it.
@@ -170,11 +192,14 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
     - Target: <base branch>
     - URL: <PR URL>
     - Review model: <model(s), as in step 9>
+    - Door: <One-way | Two-way>
     - Verdict: <✅ | 🔴> **<Mergeable | Needs changes>[, pending CI]**
 
     ## Summary
 
     <2-4 sentences: what the PR does and the overall shape of the review. Orientation, not a restatement of the diff — this is also where a verdict's justification lives.>
+
+    <A separate final paragraph: one sentence giving the reason for the Door classification, naming what makes it one-way or two-way.>
 
     ## Verification performed
 
