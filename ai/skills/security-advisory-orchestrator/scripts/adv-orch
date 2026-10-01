@@ -1,0 +1,579 @@
+#!/usr/bin/env node
+'use strict';
+
+const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const SKILL_DIR = path.resolve(__dirname, '..');
+const MASTER_TITLE = 'Security Advisory Orchestrator — Master Status Table';
+const MASTER_TAGS = ['index', 'orchestrator', 'security', 'advisory'];
+const TABLE_HEADING = '## Open advisories';
+const TABLE_HEADER = ['|   | Advisory | Summary |', '| -- | -- | ----- |'];
+const PENDING = '⏳';
+const ICONS = ['📝', '❌', PENDING];
+const ACTIVE_STATES = new Set(['triage', 'draft']);
+const AGENT_TOOL = 'Claude Opus';
+
+const USAGE = `Usage: adv-orch <command> [options]
+
+  board [--dry-run]                      Rebuild the master table, print what changed
+  reconcile [--apply]                    Archive pads / close agents of published, closed or withdrawn GHSAs, then board
+  spawn <ghsa> --label "<2-5 words>" [--concern "..."]
+                                         Analysis agent, or a discussion agent if the advisory already has a pad
+
+Global: --project-id <id> overrides project detection.`;
+
+class Fail extends Error {}
+
+function fail(message) {
+    throw new Fail(message);
+}
+
+function run(cmd, args, { input, allowFail = false } = {}) {
+    const result = spawnSync(cmd, args, {
+        encoding: 'utf8',
+        input,
+        maxBuffer: 256 * 1024 * 1024,
+        env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' },
+    });
+
+    if (result.error) {
+        if (result.error.code === 'ENOENT') fail(`\`${cmd}\` not found on PATH`);
+        throw result.error;
+    }
+
+    if (result.status !== 0 && !allowFail) {
+        const detail = (result.stderr || result.stdout || '').trim().split('\n')[0];
+        fail(`${cmd} ${args.slice(0, 2).join(' ')} failed: ${detail}`);
+    }
+
+    return result;
+}
+
+function solo(args, input) {
+    const result = run('solo', [...args, '--json'], { input, allowFail: true });
+    let out;
+
+    try {
+        out = JSON.parse(result.stdout.trim() || result.stderr);
+    } catch {
+        fail(`solo ${args.slice(0, 2).join(' ')}: ${(result.stderr || result.stdout).trim()}`);
+    }
+
+    if (out.error?.code === 'stale_discovery') {
+        fail('Solo\'s local API is unreachable. If Solo is running, this command is sandboxed without network access (e.g. Codex) — rerun it outside the sandbox. Don\'t tell the user to start Solo.');
+    }
+
+    if (!out.ok) {
+        const error = new Fail(`solo ${args.slice(0, 2).join(' ')}: ${out.error?.message ?? 'failed'}`);
+        error.code = out.error?.code;
+        throw error;
+    }
+
+    return out.data;
+}
+
+function soloPaged(args, key) {
+    const items = [];
+    let offset = 0;
+
+    for (;;) {
+        const data = solo([...args, '--limit', '500', '--offset', String(offset)]);
+        items.push(...data[key]);
+        if (!data.hasMore) return items;
+        offset = data.nextOffset;
+    }
+}
+
+function gh(args) {
+    return JSON.parse(run('gh', args).stdout);
+}
+
+// Context
+
+function parseArgs(argv) {
+    const booleans = new Set(['apply', 'dry-run', 'help']);
+    const opts = { _: [] };
+
+    for (let i = 0; i < argv.length; i++) {
+        const arg = argv[i];
+        if (!arg.startsWith('--')) {
+            opts._.push(arg);
+            continue;
+        }
+        const [name, inline] = arg.slice(2).split(/=(.*)/s);
+        if (booleans.has(name)) {
+            opts[name] = true;
+        } else {
+            const value = inline ?? argv[++i];
+            if (value === undefined) fail(`--${name} needs a value`);
+            opts[name] = value;
+        }
+    }
+
+    return opts;
+}
+
+function ghsaId(value) {
+    const m = String(value).match(/GHSA-([a-z0-9]{4})-([a-z0-9]{4})-([a-z0-9]{4})/i);
+    if (!m) fail(`not a GHSA id or link: ${value}`);
+    return `GHSA-${m.slice(1).join('-').toLowerCase()}`;
+}
+
+function realpath(dir) {
+    try {
+        return fs.realpathSync(dir);
+    } catch {
+        return dir;
+    }
+}
+
+function detectProjectId() {
+    const cwd = realpath(process.cwd());
+    const match = solo(['projects', 'list', '--limit', '500']).projects
+        .filter((p) => p.path)
+        .map((p) => ({ id: p.id, path: realpath(p.path) }))
+        .filter((p) => cwd === p.path || cwd.startsWith(`${p.path}/`))
+        .sort((a, b) => b.path.length - a.path.length)[0];
+
+    if (match) return match.id;
+
+    if (process.env.SOLO_PROCESS_ID) {
+        const data = solo(['processes', 'get', process.env.SOLO_PROCESS_ID]);
+        const projectId = (data.process ?? data).projectId;
+        if (projectId) return projectId;
+    }
+
+    fail(`no Solo project contains ${cwd} — pass --project-id`);
+}
+
+function context(opts) {
+    const projectId = opts['project-id'] ? Number(opts['project-id']) : detectProjectId();
+    const repo = gh(['repo', 'view', '--json', 'nameWithOwner']).nameWithOwner;
+
+    return { projectId, repo, pwd: process.cwd() };
+}
+
+// Pads, agents, advisories
+
+function slug(name) {
+    const kebab = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return kebab.slice(0, 20).replace(/-+$/, '');
+}
+
+function padUrl(ctx, pad) {
+    return `solo://proj/${ctx.projectId}/scratchpad/${slug(pad.name)}--${pad.id}`;
+}
+
+function oneLine(text) {
+    return String(text ?? '').replace(/\s+/g, ' ').trim();
+}
+
+function padName(adv) {
+    return `Advisory ${adv.ghsa_id} — ${oneLine(adv.summary)}`;
+}
+
+// The first block of the id keeps the agent's label visible in the process list. An all-digit
+// block would read as a PR agent's `<number> - ` name, so those keep the GHSA- prefix.
+function agentPrefix(id) {
+    const short = id.split('-')[1];
+    return /^\d+$/.test(short) ? `GHSA-${short}` : short;
+}
+
+function listAdvisories(ctx) {
+    const out = run('gh', ['api', '--paginate', `repos/${ctx.repo}/security-advisories?per_page=100`,
+        '--jq', '.[] | {ghsa_id, state, summary, created_at}']).stdout;
+    const byId = new Map();
+    const byPrefix = new Map();
+
+    for (const line of out.split('\n').filter(Boolean)) {
+        const adv = JSON.parse(line);
+        byId.set(adv.ghsa_id, adv);
+        const prefix = agentPrefix(adv.ghsa_id);
+        if (!byPrefix.has(prefix)) byPrefix.set(prefix, []);
+        byPrefix.get(prefix).push(adv.ghsa_id);
+    }
+
+    return { byId, byPrefix };
+}
+
+function active(advisories, id) {
+    return ACTIVE_STATES.has(advisories.byId.get(id)?.state);
+}
+
+function listAdvisoryPads(ctx) {
+    const byId = new Map();
+
+    for (const pad of soloPaged(['scratchpads', 'list', '--project-id', String(ctx.projectId), '--tag', 'advisory'], 'scratchpads')) {
+        const m = pad.name.match(/^Advisory (GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4})\b/i);
+        if (!m || pad.archived) continue;
+        const id = ghsaId(m[1]);
+        if (!byId.has(id)) byId.set(id, []);
+        byId.get(id).push(pad);
+    }
+
+    return byId;
+}
+
+function listAdvisoryAgents(ctx, advisories) {
+    const byId = new Map();
+    const unresolved = [];
+
+    for (const proc of soloPaged(['processes', 'list', '--project-id', String(ctx.projectId)], 'processes')) {
+        const m = proc.name?.match(/^((?:GHSA-)?[a-z0-9]{4}) - /i);
+        if (!m || proc.kind !== 'agent') continue;
+        const prefix = /^GHSA-/i.test(m[1]) ? `GHSA-${m[1].slice(5).toLowerCase()}` : m[1].toLowerCase();
+        if (/^\d+$/.test(prefix)) continue;
+
+        const ids = advisories.byPrefix.get(prefix) ?? [];
+        if (ids.length !== 1) {
+            if (ids.length > 1) unresolved.push(`agent ${proc.id} "${proc.name}" matches ${ids.join(', ')}`);
+            continue;
+        }
+
+        if (!byId.has(ids[0])) byId.set(ids[0], []);
+        byId.get(ids[0]).push({ ...proc, running: proc.status === 'running' });
+    }
+
+    return { byId, unresolved };
+}
+
+function running(agents) {
+    return (agents ?? []).filter((a) => a.running);
+}
+
+function canonicalPad(adv, pads) {
+    let candidates = (pads ?? []).filter((p) => !p.tags.includes('second-opinion'));
+    if (candidates.length > 1) {
+        const exact = candidates.filter((p) => p.name === padName(adv));
+        if (exact.length) candidates = exact;
+    }
+    if (candidates.length > 1) return { error: `ambiguous advisory pads ${candidates.map((p) => p.id).join(', ')}` };
+
+    return { pad: candidates[0] ?? null };
+}
+
+function readPad(ctx, id, limit) {
+    const args = ['scratchpads', 'read', String(id), '--project-id', String(ctx.projectId)];
+    if (limit) args.push('--limit', String(limit));
+    return solo(args).scratchpad;
+}
+
+function parseVerdict(content) {
+    const verdict = content.match(/^[ \t]*(?:[-*][ \t]*)?Verdict:[ \t]*(.+)$/mi)?.[1].trim();
+    let icon = null;
+
+    if (verdict) {
+        if (verdict.startsWith('📝')) icon = '📝';
+        else if (verdict.startsWith('❌')) icon = '❌';
+        else if (/invalid|not a vulnerability|duplicate|already[- ]mitigated|by[- ]design|won'?t[- ]fix/i.test(verdict)) icon = '❌';
+        else if (/\bvalid\b/i.test(verdict)) icon = '📝';
+    }
+
+    return { verdict, icon, text: verdict ? verdict.replace(/^(📝|❌)\s*/u, '').replace(/\*\*/g, '') : null };
+}
+
+// Master pad
+
+function findMaster(ctx, { create }) {
+    const found = soloPaged(['scratchpads', 'list', '--project-id', String(ctx.projectId), '--query', MASTER_TITLE], 'scratchpads')
+        .filter((p) => p.name === MASTER_TITLE && !p.archived);
+
+    if (found.length > 1) fail(`${found.length} pads titled "${MASTER_TITLE}": ${found.map((p) => p.id).join(', ')}`);
+    if (found.length) return readPad(ctx, found[0].id);
+    if (!create) return null;
+
+    const content = [
+        'Status per open security advisory. The GHSA id links to that advisory\'s scratchpad. Procedure lives in the `security-advisory-orchestrator` skill, not here.',
+        '',
+        '**Legend:** 📝 Draft ready · ❌ Declined · ⏳ Analysis in progress',
+        '',
+        TABLE_HEADING,
+        ...TABLE_HEADER,
+        '',
+        '## Notes',
+        '',
+        `* Repo: ${ctx.repo} (Solo project ${ctx.projectId}).`,
+        '',
+    ].join('\n');
+    const args = ['scratchpads', 'create', '--project-id', String(ctx.projectId), '--name', MASTER_TITLE, '--content-file', '-'];
+    for (const tag of MASTER_TAGS) args.push('--tag', tag);
+
+    return solo(args, content).scratchpad;
+}
+
+function parseTable(content) {
+    const rows = new Map();
+
+    for (const line of sectionLines(content)) {
+        const m = line.match(/^\|\s*(📝|❌|⏳)\s*\|\s*\[?(GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4})/iu);
+        if (m) rows.set(ghsaId(m[2]), { icon: m[1], line });
+    }
+
+    return rows;
+}
+
+function sectionBounds(lines) {
+    const start = lines.findIndex((l) => l.trim() === TABLE_HEADING);
+    if (start === -1) fail(`master pad has no "${TABLE_HEADING}" heading`);
+    let end = lines.findIndex((l, i) => i > start && /^#{1,2}\s/.test(l));
+    if (end === -1) end = lines.length;
+
+    return [start, end];
+}
+
+function sectionLines(content) {
+    const lines = content.split('\n');
+    const [start, end] = sectionBounds(lines);
+    return lines.slice(start + 1, end);
+}
+
+function replaceTable(content, tableLines) {
+    const lines = content.split('\n');
+    const [start, end] = sectionBounds(lines);
+
+    return [...lines.slice(0, start + 1), ...tableLines, '', ...lines.slice(end)].join('\n');
+}
+
+function stampNote(content, label, date) {
+    const pattern = new RegExp(`(${label}:\\s*)\\d{4}-\\d{2}-\\d{2}`);
+    if (pattern.test(content)) return content.replace(pattern, `$1${date}`);
+
+    const lines = content.split('\n');
+    const notes = lines.findIndex((l) => /^##\s+Notes\s*$/.test(l));
+    if (notes === -1) return content;
+    let end = lines.findIndex((l, i) => i > notes && /^#{1,2}\s/.test(l));
+    if (end === -1) end = lines.length;
+    while (end > notes + 1 && lines[end - 1].trim() === '') end--;
+    lines.splice(end, 0, `* ${label}: ${date}`);
+
+    return lines.join('\n');
+}
+
+function writeMaster(ctx, master, transform) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+        const next = transform(master.content);
+        if (next === master.content) return master;
+
+        try {
+            return solo(['scratchpads', 'update', String(master.id), '--project-id', String(ctx.projectId),
+                '--expected-revision', String(master.revision), '--content-file', '-'], next).scratchpad;
+        } catch (e) {
+            if (e.code !== 'precondition_failed') throw e;
+            master = readPad(ctx, master.id);
+        }
+    }
+
+    fail('master pad kept changing under the write — try again');
+}
+
+// Commands
+
+function board(ctx, opts = {}) {
+    const master = findMaster(ctx, { create: !opts['dry-run'] });
+    const previous = master ? parseTable(master.content) : new Map();
+    const advisories = listAdvisories(ctx);
+    const pads = listAdvisoryPads(ctx);
+    const agents = listAdvisoryAgents(ctx, advisories);
+    const errors = [];
+    const waiting = [];
+    const rows = [];
+    const verdicts = new Map();
+
+    const tracked = [...new Set([...pads.keys(), ...[...agents.byId].filter(([, a]) => running(a).length).map(([id]) => id)])];
+    const onBoard = tracked
+        .filter((id) => active(advisories, id))
+        .sort((a, b) => Date.parse(advisories.byId.get(b).created_at) - Date.parse(advisories.byId.get(a).created_at));
+
+    for (const id of onBoard) {
+        const adv = advisories.byId.get(id);
+        const row = (icon, pad) => {
+            const link = pad ? `[${id}](${padUrl(ctx, pad)})` : id;
+            return { id, icon, line: `| ${icon} | ${link} | ${oneLine(adv.summary).replace(/\|/g, '\\|')} |` };
+        };
+        const keep = (why, pad) => {
+            errors.push(`${id}: ${why} — row left as it was`);
+            if (previous.has(id)) rows.push(row(previous.get(id).icon, pad));
+        };
+
+        const { pad, error } = canonicalPad(adv, pads.get(id));
+        if (error) {
+            keep(error, null);
+            continue;
+        }
+
+        let icon = PENDING;
+
+        if (pad) {
+            const meta = parseVerdict(readPad(ctx, pad.id, 30).content);
+            if (!meta.icon) {
+                keep(`pad ${pad.id} has no parseable Verdict line (${JSON.stringify(meta.verdict ?? null)})`, pad);
+                continue;
+            }
+            icon = meta.icon;
+            verdicts.set(id, meta.text);
+        } else {
+            const agent = running(agents.byId.get(id))[0];
+            waiting.push(`⏳ ${id}: agent ${agent.id} running, no pad yet`);
+        }
+
+        rows.push(row(icon, pad));
+    }
+
+    const changes = [];
+    const current = new Map(rows.map((r) => [r.id, r]));
+    const relinked = [];
+    const verdict = (id) => (verdicts.get(id) ? ` (${verdicts.get(id)})` : '');
+
+    for (const row of rows) {
+        const before = previous.get(row.id);
+        if (!before) changes.push(`added ${row.id} ${row.icon}${verdict(row.id)}`);
+        else if (before.icon !== row.icon) changes.push(`${row.id} ${before.icon}→${row.icon}${verdict(row.id)}`);
+        else if (before.line !== row.line) relinked.push(row.id);
+    }
+
+    if (relinked.length) changes.push(`summary/link refreshed: ${relinked.join(' ')}`);
+
+    for (const id of previous.keys()) {
+        if (current.has(id)) continue;
+        const state = advisories.byId.get(id)?.state;
+        changes.push(`removed ${id} (${state && !ACTIVE_STATES.has(state) ? state : 'no pad or running agent'})`);
+    }
+
+    const stale = [...new Set([...pads.keys(), ...agents.byId.keys()])].filter((id) => advisories.byId.has(id) && !active(advisories, id));
+    const unknown = [...pads.keys()].filter((id) => !advisories.byId.has(id));
+
+    let written = master;
+    if (!opts['dry-run']) {
+        const today = new Date().toISOString().slice(0, 10);
+        written = writeMaster(ctx, master, (content) => {
+            const next = replaceTable(content, [...TABLE_HEADER, ...rows.map((r) => r.line)]);
+            return opts['mark-reconciled'] ? stampNote(next, 'Last reconciled', today) : next;
+        });
+    }
+
+    const counts = ICONS.map((icon) => `${icon} ${rows.filter((r) => r.icon === icon).length}`).join(' · ');
+    const where = written ? padUrl(ctx, written) : '(no master pad yet)';
+    console.log(`board${opts['dry-run'] ? ' (dry run, not written)' : ''}: ${counts} — ${rows.length} rows — ${where}`);
+    console.log(changes.length ? changes.join('\n') : 'no changes');
+    if (waiting.length) console.log(waiting.join('\n'));
+    if (stale.length) console.log(`published/closed/withdrawn GHSAs still with pads or agents: ${stale.join(' ')} — run reconcile`);
+    if (unknown.length) console.log(`WARN pads for GHSAs not found in ${ctx.repo}: ${unknown.join(' ')} — left alone`);
+    for (const line of agents.unresolved) console.log(`WARN ${line} — can't tell which, left alone`);
+    for (const error of errors) console.log(`ERROR ${error}`);
+
+    return errors.length ? 2 : 0;
+}
+
+function reconcile(ctx, opts) {
+    const advisories = listAdvisories(ctx);
+    const pads = listAdvisoryPads(ctx);
+    const agents = listAdvisoryAgents(ctx, advisories);
+    const lines = [];
+
+    const done = [...new Set([...pads.keys(), ...agents.byId.keys()])]
+        .filter((id) => advisories.byId.has(id) && !active(advisories, id))
+        .sort();
+
+    for (const id of done) {
+        const padIds = (pads.get(id) ?? []).map((p) => p.id);
+        const procs = agents.byId.get(id) ?? [];
+        const actions = [];
+        if (padIds.length) actions.push(`archive pad${padIds.length > 1 ? 's' : ''} ${padIds.join(', ')}`);
+        if (procs.length) actions.push(`close agent${procs.length > 1 ? 's' : ''} ${procs.map((p) => `${p.id}${p.running ? '' : ` (${p.status})`}`).join(', ')}`);
+        lines.push(`${id} ${advisories.byId.get(id).state}: ${actions.join('; ')}`);
+
+        if (opts.apply) {
+            for (const padId of padIds) solo(['scratchpads', 'archive', String(padId), '--project-id', String(ctx.projectId)]);
+            for (const proc of procs) solo(['processes', 'delete', String(proc.id), '--project-id', String(ctx.projectId), '--confirm-stop-running']);
+        }
+    }
+
+    for (const [id, list] of agents.byId) {
+        const live = running(list);
+        if (live.length < 2 || !active(advisories, id)) continue;
+        const who = live.sort((a, b) => a.id - b.id).map((a) => `${a.id} "${a.name}"`).join(', ');
+        lines.push(`WARN ${id} has ${live.length} running agents: ${who} (oldest first) — not closed, ask which to keep`);
+    }
+
+    const verb = opts.apply ? 'reconcile' : 'reconcile (plan only — rerun with --apply)';
+    console.log(`${verb}: ${done.length ? `${done.length} published/closed/withdrawn` : 'nothing to clean up'}`);
+    if (lines.length) console.log(lines.join('\n'));
+
+    return board(ctx, { 'mark-reconciled': opts.apply });
+}
+
+function template(name, vars) {
+    const text = fs.readFileSync(path.join(SKILL_DIR, 'templates', `${name}.md`), 'utf8');
+    const filled = text.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+        if (!(key in vars)) fail(`template ${name}: no value for {{${key}}}`);
+        return vars[key];
+    });
+
+    return filled.replace(/\s+$/, '');
+}
+
+function spawn(ctx, opts) {
+    if (opts._.length !== 1) fail('spawn takes exactly one GHSA id or link');
+    const id = ghsaId(opts._[0]);
+
+    const label = (opts.label ?? '').trim();
+    if (!label) fail('spawn needs --label "<2-5 word topic>"');
+    if (label.split(/\s+/).length > 5 || label.length > 32 || /GHSA/i.test(label)) {
+        fail(`label "${label}" should be a plain 2-5 word topic under 32 chars, no GHSA id`);
+    }
+
+    const advisories = listAdvisories(ctx);
+    const adv = advisories.byId.get(id);
+    if (!adv) fail(`${id} not found in ${ctx.repo}'s security advisories`);
+    if (!active(advisories, id)) fail(`${id} is ${adv.state} — not spawning`);
+
+    const live = running(listAdvisoryAgents(ctx, advisories).byId.get(id));
+    if (live.length) fail(`${id} already has a running agent: ${live.map((a) => `${a.id} "${a.name}"`).join(', ')}`);
+
+    const { pad, error } = canonicalPad(adv, listAdvisoryPads(ctx).get(id));
+    if (error) fail(`${id}: ${error}`);
+
+    const tool = solo(['agents', 'list']).agentTools.find((t) => t.enabled && t.name === AGENT_TOOL);
+    if (!tool) fail(`no enabled Solo agent tool named "${AGENT_TOOL}"`);
+
+    const concern = opts.concern ? oneLine(opts.concern) : '';
+    const vars = { ghsa: id, repo: ctx.repo, pwd: ctx.pwd, projectId: ctx.projectId, tag: id.toLowerCase() };
+    const task = pad
+        ? template('discuss-task', { ...vars, padName: pad.name, concern: concern ? `\nThe user wants to talk about: ${concern}\n` : '' })
+        : template('advisory-task', { ...vars, padName: padName(adv), concern: concern ? `\nThe user raised this when asking for the analysis: ${concern}\n` : '' });
+
+    const proc = solo(['processes', 'spawn', '--project-id', String(ctx.projectId), '--kind', 'agent',
+        '--agent-tool-id', String(tool.id), '--name', `${agentPrefix(id)} - ${label}`, '--arg', task]).process;
+
+    const what = pad ? `discussion agent, pad ${padUrl(ctx, pad)}` : 'analysis — arm the backstop';
+    console.log(`spawned ${id} → agent ${proc.id} "${proc.name}" on ${AGENT_TOOL}; ${what}`);
+
+    return board(ctx);
+}
+
+function main() {
+    const [command, ...rest] = process.argv.slice(2);
+    const opts = parseArgs(rest);
+
+    if (!command || command === 'help' || opts.help) {
+        console.log(USAGE);
+        return 0;
+    }
+
+    const commands = { board, reconcile, spawn };
+    if (!commands[command]) fail(`unknown command "${command}"\n\n${USAGE}`);
+
+    run('solo', ['--version']);
+
+    return commands[command](context(opts), opts);
+}
+
+try {
+    process.exitCode = main();
+} catch (e) {
+    if (!(e instanceof Fail)) throw e;
+    console.error(`adv-orch: ${e.message}`);
+    process.exitCode = 1;
+}
