@@ -14,12 +14,12 @@ return {
         focus = positions.center.large,
     },
     PhpStorm = {
-        id = 'com.jetbrains.PhpStorm',
+        id = 'com.jetbrains.PhpStormLight-EAP',
+        key = 'p',
         position = positions.center.large,
     },
     Polyscope = {
         id = 'com.getpolyscope.app',
-        key = 'p',
         position = positions.center.large,
     },
     Arc = {
