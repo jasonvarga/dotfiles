@@ -1,7 +1,7 @@
 #!/bin/bash
 input=$(cat)
 cwd=$(echo "$input" | jq -r '.workspace.current_dir')
-model=$(echo "$input" | jq -r '.model.display_name // ""')
+model=$(echo "$input" | jq -r '[.model.display_name, .effort.level] | map(select(. != null and . != "")) | join(" ")')
 context_used=$(echo "$input" | jq -r '.context_window.used_percentage // 0' | xargs printf '%.0f')
 
 prompt=$(starship prompt --path "$cwd" \
