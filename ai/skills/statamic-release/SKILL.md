@@ -1,8 +1,8 @@
 ---
 name: statamic-release
 description: >-
-  Prepare a Statamic release: sync the default branch, create a `release`
-  branch, and generate the changelog entry. Use when the user says "prepare a
+  Prepare a Statamic release: create a `release` branch in its own worktree
+  off the up-to-date default branch, and generate the changelog entry. Use when the user says "prepare a
   release", "start a release", "cut a release", or "do a statamic release".
   Only operates inside the statamic/cms repo. Stops before committing, pushing,
   tagging, or opening a PR.
@@ -24,65 +24,67 @@ This skill has two phases, run at different times:
 
 # Phase A: prepare the release
 
-Gets the repo into a state where a release PR *could* be opened: up to date,
-on a fresh `release` branch, with the new version's entry written into
-`CHANGELOG.md`.
+Gets the repo into a state where a release PR *could* be opened: a fresh
+`release` branch, checked out in its own worktree at
+`/Users/jason/code/_worktrees/statamic-cms-release`, branched from the up-to-date default branch, with
+the new version's entry written into `CHANGELOG.md`.
+
+Everything happens in the worktree, so the main checkout is never touched — it
+can be on any branch and have uncommitted changes.
 
 This phase deliberately stops before committing. The user reviews the changelog
 diff, then commits and opens the PR themselves (or asks for `commit` /
 `create-pull-request`). **Do not commit, push, tag, or open a PR** as part of
 Phase A, even if the run went perfectly.
 
-## 1. Guard: must be in statamic/cms, on the default branch
+## 1. Guard: must be in statamic/cms
 
 ```bash
 git remote -v
-gh repo view --json defaultBranchRef -q .defaultBranchRef.name
-git branch --show-current
-git status --porcelain
+DEFAULT=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
 ```
 
 - If no remote points to `statamic/cms`, **stop** — this skill only works there.
 - Note that `master` in this repo is the *next major* branch, not the default.
   Trust `gh repo view`, not intuition.
-- If the current branch isn't the default branch, **stop and ask** — don't
-  check it out unilaterally.
-- If the working tree is dirty, mention it and ask whether to continue. The new
-  branch inherits those changes.
+- The current branch and working tree state don't matter; the worktree is
+  branched from `origin/$DEFAULT`, not from whatever is checked out.
 
 ## 2. Sync
 
 ```bash
-git pull
-git fetch origin --tags
+git fetch origin "$DEFAULT" --tags
 ```
 
-Tags are needed and won't arrive with the pull alone: the release workflow tags
-a separate "Build assets" commit that isn't an ancestor of the branch, so tags
-sit off-branch.
+Tags are needed: the release workflow tags a separate "Build assets" commit
+that isn't an ancestor of the branch, so tags sit off-branch. Never use
+`--depth` — it makes the shared repo shallow.
 
-If `git pull` isn't a clean fast-forward, stop and report — don't merge or
-rebase around it.
+## 3. Check no `release` branch or worktree exists yet
 
-## 3. Check no `release` branch exists yet
-
-Both places. They're supposed to be cleaned up after each release, but might not
-have been:
+All three places. They're supposed to be cleaned up after each release, but
+might not have been:
 
 ```bash
 git branch --list release
 git ls-remote --heads origin release
+git worktree list
+ls -d /Users/jason/code/_worktrees/statamic-cms-release 2>/dev/null
 ```
 
-If **either** returns anything, **stop and ask the user what to do**. Don't
-delete, reuse, reset, or branch off it. A leftover `release` branch usually
-means a previous release is still in flight.
+If **any** returns anything relevant, **stop and ask the user what to do**.
+Don't delete, reuse, reset, or branch off it. A leftover `release` branch or
+worktree usually means a previous release is still in flight.
 
-## 4. Create the branch
+## 4. Create the worktree
 
 ```bash
-git checkout -b release
+git worktree add -b release /Users/jason/code/_worktrees/statamic-cms-release "origin/$DEFAULT"
 ```
+
+Run every remaining Phase A command with `/Users/jason/code/_worktrees/statamic-cms-release` as the working
+directory. No `composer install` / `npm ci` — the changelog only needs `git` and
+`gh`.
 
 ## 5. Generate the changelog
 
@@ -91,7 +93,8 @@ Invoke the **`changelog`** skill (project-scoped — it lives in
 how to find the commits since the last tag, dedupe 5.x merges, categorize,
 pick the version number, and insert the entry into `CHANGELOG.md`.
 
-Don't reimplement or paraphrase its logic here — read and follow it.
+Don't reimplement or paraphrase its logic here — read and follow it. Run it
+from inside the release worktree so `CHANGELOG.md` is edited there.
 
 If it refuses to run because of `disable-model-invocation`, tell the user; that
 flag has to be off for this skill to chain it.
@@ -102,11 +105,13 @@ flag has to be off for this skill to chain it.
 - Counts: entries under "What's new" / "What's fixed".
 - Anything noteworthy from the changelog skill's own summary — commits skipped
   and why, titles reworded, judgment calls on categorization.
+- Worktree path (`/Users/jason/code/_worktrees/statamic-cms-release`).
 - Remind the user nothing is committed, and that the release branch and
   changelog diff are theirs to review.
 
 ## 7. Committing and creating pull request
 
+- Commit and push from inside the release worktree.
 - When the user says to commit, the CHANGELOG.md should be its own commit
   with a message of "Changelog".
 - Anything else should be committed atomically.
@@ -156,20 +161,28 @@ gh release view v<version> --json tagName,createdAt,isLatest
   release branch may still be needed to retry.
 - Only continue when the run concluded `success` **and** the release exists.
 
-## 3. Delete the release branch and return to the default branch
+## 3. Remove the worktree and branch
+
+From the main checkout (not the worktree):
 
 ```bash
-git checkout <default> && git branch -D release && git pull
+git worktree remove --force /Users/jason/code/_worktrees/statamic-cms-release
+git branch -D release
+git worktree list
 ```
 
-Use the default branch from Phase A step 1 — don't assume `6.x`. `-D` is a force
-delete, which is right here: the branch was merged via squash or merge commit, so
-`-d` may not recognise it as merged.
+`--force` covers untracked or ignored leftovers in the worktree; `-D` is a force
+delete, which is right here: the branch was merged via squash or merge commit,
+so `-d` may not recognise it as merged. Don't use `rm` on the directory — it can
+silently no-op; verify with `git worktree list` that the worktree is gone.
+
+The main checkout's branch is left alone. If it's the default branch, `git pull`
+to bring it up to date; otherwise just mention it.
 
 ## 4. Pull the tag down
 
 Tags sit off-branch (the workflow tags a "Build assets" commit that isn't an
-ancestor of the branch), so the pull in step 3 won't bring it:
+ancestor of the branch), so a plain pull won't bring it:
 
 ```bash
 git fetch origin --tags
@@ -209,6 +222,6 @@ PR independently. Just confirm the agent spawned and started.
 
 ## 7. Report
 
-Version released, that the workflow succeeded, branch deleted, tag now local,
-and which branch they're on now. If it was a minor release, note that the
+Version released, that the workflow succeeded, worktree and branch removed, tag
+now local, and which branch the main checkout is on. If it was a minor release, note that the
 `document-release` agent was kicked off in the `docs` project.
