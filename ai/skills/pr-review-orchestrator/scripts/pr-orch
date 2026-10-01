@@ -22,6 +22,7 @@ const USAGE = `Usage: pr-orch <command> [options]
   sweep-plan [pr...] [--exclude n,n]     List board PRs with new commits or new discussion
   nudge <pr...>                          Print the re-review text for each PR's running agent, mark it pending
   spawn <pr> --label "<2-5 words>" [--model opus|sonnet] [--concern "..."] [--refresh]
+  spawn <pr> --discuss --label "..."     Discussion-only agent on an existing review (full review if none)
   clear-pending <pr...>                  Forget a pending re-review request
 
 Global: --project-id <id> overrides project detection.`;
@@ -95,7 +96,7 @@ function gh(args) {
 // Context
 
 function parseArgs(argv) {
-    const booleans = new Set(['apply', 'dry-run', 'mark-refreshed', 'refresh', 'help']);
+    const booleans = new Set(['apply', 'dry-run', 'mark-refreshed', 'refresh', 'discuss', 'help']);
     const opts = { _: [] };
 
     for (let i = 0; i < argv.length; i++) {
@@ -770,22 +771,41 @@ function spawn(ctx, opts) {
     const tool = solo(['agents', 'list']).agentTools.find((t) => t.enabled && t.name === toolName);
     if (!tool) fail(`no enabled Solo agent tool named "${toolName}"`);
 
+    const discuss = opts.discuss && pad;
+    const concern = opts.concern ? String(opts.concern).replace(/\s+/g, ' ').trim() : '';
     const vars = { number: n, repo: ctx.repo, pwd: ctx.pwd, projectId: ctx.projectId, title: stripTag(pr.title) };
-    const task = template('review-task', {
-        ...vars,
-        modelClause: choice.decided ? ` Use ${choice.model} for this review — the model fit is already decided, so skip the model router.` : '',
-        refresh: opts.refresh || pad ? `\n${template('refresh-line', vars)}\n` : '',
-        concern: opts.concern ? `\nThe user raised this concern when asking for the review: ${String(opts.concern).replace(/\s+/g, ' ').trim()}\n` : '',
-    });
+    let task;
+
+    if (discuss) {
+        const stale = meta.sha && !shaMatch(meta.sha, pr.headRefOid);
+        task = template('discuss-task', {
+            ...vars,
+            padName: pad.name,
+            staleNote: stale ? ` The review was written at ${meta.sha} but the head is now ${pr.headRefOid.slice(0, 7)} — tell the user it may be out of date; don't re-review unless asked.` : '',
+            concern: concern ? `\nThe user wants to talk about: ${concern}\n` : '',
+        });
+    } else {
+        task = template('review-task', {
+            ...vars,
+            modelClause: choice.decided ? ` Use ${choice.model} for this review — the model fit is already decided, so skip the model router.` : '',
+            refresh: opts.refresh || pad ? `\n${template('refresh-line', vars)}\n` : '',
+            concern: concern ? `\nThe user raised this concern when asking for the review: ${concern}\n` : '',
+        });
+    }
 
     const proc = solo(['processes', 'spawn', '--project-id', String(ctx.projectId), '--kind', 'agent',
         '--agent-tool-id', String(tool.id), '--name', `${n} - ${label}`, '--arg', task]).process;
 
-    const state = loadState(ctx);
-    state.pending[n] = { sha: pr.headRefOid, revision: pad?.revision ?? 0, at: new Date().toISOString() };
-    saveState(ctx, state);
+    if (!discuss) {
+        const state = loadState(ctx);
+        state.pending[n] = { sha: pr.headRefOid, revision: pad?.revision ?? 0, at: new Date().toISOString() };
+        saveState(ctx, state);
+    }
 
-    console.log(`spawned #${n} → agent ${proc.id} "${proc.name}" on ${choice.model} (${choice.source})${pad ? `, catching up pad ${padUrl(ctx, pad)}` : ''}`);
+    const what = discuss
+        ? `discussion agent, pad ${padUrl(ctx, pad)}`
+        : `${opts.discuss ? 'no review yet, so a full review — arm the backstop' : 'review'}${pad ? `, catching up pad ${padUrl(ctx, pad)}` : ''}`;
+    console.log(`spawned #${n} → agent ${proc.id} "${proc.name}" on ${choice.model} (${choice.source}); ${what}`);
 
     return board(ctx);
 }

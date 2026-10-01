@@ -29,6 +29,6 @@ Both mark the row ⏳ until the pad catches up. Arm `timer_fire_when_idle_all` o
 
 ## 3. Close, finish
 
-**Close each agent the sweep spawned** (`close_process`) once its row has left ⏳. A sweep agent is a throwaway that exists to refresh one pad; the user can always respawn a discussion agent against the written review. **Agents that were already running are left alone** — nudging them is fine, closing them is not.
+**Whole-board sweeps only** (no PR numbers named): close each agent the sweep spawned (`close_process`) once its row has left ⏳. If the user named the PRs, it's a re-review they asked for — leave every agent running for discussion. A sweep agent is a throwaway that exists to refresh one pad; the user can always respawn a discussion agent against the written review. **Agents that were already running are left alone** — nudging them is fine, closing them is not.
 
 When the whole list is done: `pr-orch board --mark-refreshed`, confirm no ⏳ rows remain, and report which PRs were re-reviewed and which icons changed — never what changed in them.
