@@ -24,6 +24,10 @@ return {
     },
     Arc = {
         id = 'company.thebrowser.Browser',
+        position = positions.center.large,
+    },
+    Brave = {
+        id = 'com.brave.Browser',
         key = 'b', -- browser
         position = positions.center.large,
     },

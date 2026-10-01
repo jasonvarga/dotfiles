@@ -7,11 +7,11 @@ return {
       { '23,9 6x10',    '23,9 6x10',                 '23,9 6x10',   '23,9 6x10',              '23,9 6x10' },
     },
     apps = {
-        Arc = { cell = 1, open = true },
+        Brave = { cell = 2, open = true },
         Code = { cell = 2 },
         PhpStorm = { cell = 2 },
         Polyscope = { cell = 2 },
-        Solo = { cell = 2, open = true },
+        Solo = { cell = 1, open = true },
         Tower = { cell = 2 },
         Tinkerwell = { cell = 2 },
         TablePlus = { cell = 2 },
@@ -26,7 +26,7 @@ return {
     },
     apps = {
         Ray = { cell = 1, open = true },
-        Arc = { cell = 2, open = true },
+        Brave = { cell = 2, open = true },
         Code = { cell = 2 },
         PhpStorm = { cell = 2 },
         Polyscope = { cell = 2 },
@@ -44,7 +44,7 @@ return {
       { '16,0 14x20', '17,0 13x20', '11,0 19x20', '11,0 19x20', '11,0 19x20' },
     },
     apps = {
-        Arc = { cell = 2, open = true },
+        Brave = { cell = 2, open = true },
         Ray = { cell = 1, open = true },
         Code = { cell = 3 },
         PhpStorm = { cell = 3 },
@@ -61,7 +61,7 @@ return {
         { positions.center.large }
     },
     apps = {
-        Arc = { cell = 1 },
+        Brave = { cell = 1 },
         Code = { cell = 1 },
         PhpStorm = { cell = 1 },
         Polyscope = { cell = 1 },
@@ -75,7 +75,7 @@ return {
         { '4,1 6x18' },
     },
     apps = {
-        Arc = { cell = 1 },
+        Brave = { cell = 1 },
         Code = { cell = 1 },
         PhpStorm = { cell = 1 },
         Polyscope = { cell = 1 },
