@@ -46,6 +46,7 @@ Commit the working tree's pending changes as a series of atomic commits — each
    git commit -m "<message>"
    ```
    - Repeat per logical group.
+   - Always stage explicit paths. Never use `git add -A`, `--all`, `.`, or `-a`/`-am` on commit — permission rules block them. If a git command is denied, don't give up on committing: retry with explicit paths.
    - Per global instructions, do not pass options to `rm`. Do not amend existing commits unless asked.
 
 6. **Do not push.** Report the commits created (`git log --oneline` of the new commits).
