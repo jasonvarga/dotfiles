@@ -172,6 +172,20 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
 
    The reason for the classification is not part of this line. In a scratchpad it goes at the end of the Summary (step 10); in the session, state it in one sentence after the verdict block.
 
+   **Record the release type**, on its own line directly under the door type — the semver bump this PR would require if it shipped on its own:
+
+   ```
+   Release: Patch
+   Release: Minor
+   Release: Major
+   ```
+
+   - **Patch** — bug fixes, internal refactors, performance, docs, tests, tooling. No new public surface.
+   - **Minor** — backwards-compatible additions: new features, new public API, config keys, events, hooks, deprecations.
+   - **Major** — breaking changes: removed or changed public API (including signatures), changed defaults or behavior existing users rely on, required migrations or upgrade steps.
+
+   The highest applicable type wins. Judge by what the change does, not by the target branch — then compare the two: a Major PR targeting a branch that only ships minor/patch releases is a Critical finding (step 7's breaking-changes rule), and the line still says `Major`.
+
    **Then Findings**, ordered by severity. File and line, what's wrong, suggested fix where you have one.
 
    **Then Observations**, one line each. No severity labels, no code blocks, no suggested-fix blocks. If an item needs more than a line to explain, it's probably a Finding; if it isn't, cut it.
@@ -193,6 +207,7 @@ The user may provide a PR number (e.g. `14263`). Parse from the user's message o
     - URL: <PR URL>
     - Review model: <model(s), as in step 9>
     - Door: <One-way | Two-way>
+    - Release: <Patch | Minor | Major>
     - Verdict: <✅ | 🔴> **<Mergeable | Needs changes>[, pending CI]**
 
     ## Summary
