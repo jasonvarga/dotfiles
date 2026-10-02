@@ -523,6 +523,9 @@ function spawn(ctx, opts) {
     if (label.split(/\s+/).length > 5 || label.length > 32 || /GHSA/i.test(label)) {
         fail(`label "${label}" should be a plain 2-5 word topic under 32 chars, no GHSA id`);
     }
+    if (/\b(advisory|discussion|discuss|analysis|agent|review)\b/i.test(label)) {
+        fail(`label "${label}" describes the agent's role — use a 2-5 word gist of the vulnerability, from the GHSA summary`);
+    }
 
     const advisories = listAdvisories(ctx);
     const adv = advisories.byId.get(id);
