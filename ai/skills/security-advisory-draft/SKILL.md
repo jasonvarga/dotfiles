@@ -80,7 +80,15 @@ Because you were asked to save it, or you're running under the `security-advisor
 <the draft from step 6>
 ```
 
-For a decline, the verdict line is `- Verdict: ❌ **<Invalid | Duplicate | Already mitigated | By design | Won't fix>**`, and `## Advisory Draft` is replaced by `## Decline` holding the rationale and any suggested reporter reply.
+For a decline, `## Advisory Draft` is replaced by `## Decline` holding the rationale and any suggested reporter reply, and the verdict line uses the category's emoji and exact name, optionally followed by ` — <short detail>`:
+
+| Category | Verdict line |
+|---|---|
+| Invalid | `- Verdict: 🚫 **Invalid**` |
+| Duplicate | `- Verdict: 🔁 **Duplicate — GHSA-xxxx-xxxx-xxxx**` |
+| Already mitigated | `- Verdict: 🛡 **Already mitigated**` |
+| By design | `- Verdict: 📐 **By design**` |
+| Won't fix | `- Verdict: 🙅 **Won't fix**` |
 
 - **Name the scratchpad** `Advisory <GHSA-ID> — <GHSA summary>`, unless you were given an exact name.
 - **The metadata block comes first and stays bulleted.** Solo's scratchpad view collapses consecutive plain lines onto one rendered line.
