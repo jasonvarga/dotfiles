@@ -19,7 +19,7 @@ const USAGE = `Usage: adv-orch <command> [options]
 
   board [--dry-run]                      Rebuild the master table, print what changed
   reconcile [--apply]                    Archive pads / close agents of published, closed or withdrawn GHSAs, then board
-  spawn <ghsa> --label "<2-5 words>" [--concern "..."]
+  spawn <ghsa> [--concern "..."]
                                          Analysis agent, or a discussion agent if the advisory already has a pad
 
 Global: --project-id <id> overrides project detection.`;
@@ -174,11 +174,13 @@ function padName(adv) {
     return `Advisory ${adv.ghsa_id} — ${oneLine(adv.summary)}`;
 }
 
-// The first block of the id keeps the agent's label visible in the process list. An all-digit
-// block would read as a PR agent's `<number> - ` name, so those keep the GHSA- prefix.
+// The first block of the id keeps the agent's label visible in the process list.
+function shortId(id) {
+    return id.split('-')[1].toLowerCase();
+}
+
 function agentPrefix(id) {
-    const short = id.split('-')[1];
-    return /^\d+$/.test(short) ? `GHSA-${short}` : short;
+    return `GHSA-${shortId(id)}`;
 }
 
 function listAdvisories(ctx) {
@@ -190,7 +192,7 @@ function listAdvisories(ctx) {
     for (const line of out.split('\n').filter(Boolean)) {
         const adv = JSON.parse(line);
         byId.set(adv.ghsa_id, adv);
-        const prefix = agentPrefix(adv.ghsa_id);
+        const prefix = shortId(adv.ghsa_id);
         if (!byPrefix.has(prefix)) byPrefix.set(prefix, []);
         byPrefix.get(prefix).push(adv.ghsa_id);
     }
@@ -221,12 +223,12 @@ function listAdvisoryAgents(ctx, advisories) {
     const unresolved = [];
 
     for (const proc of soloPaged(['processes', 'list', '--project-id', String(ctx.projectId)], 'processes')) {
-        const m = proc.name?.match(/^((?:GHSA-)?[a-z0-9]{4}) - /i);
+        // Bare `<short-id> - ` names predate the GHSA- prefix; an all-digit one is a PR agent.
+        const m = proc.name?.match(/^(GHSA-)?([a-z0-9]{4}) - /i);
         if (!m || proc.kind !== 'agent') continue;
-        const prefix = /^GHSA-/i.test(m[1]) ? `GHSA-${m[1].slice(5).toLowerCase()}` : m[1].toLowerCase();
-        if (/^\d+$/.test(prefix)) continue;
+        if (!m[1] && /^\d+$/.test(m[2])) continue;
 
-        const ids = advisories.byPrefix.get(prefix) ?? [];
+        const ids = advisories.byPrefix.get(m[2].toLowerCase()) ?? [];
         if (ids.length !== 1) {
             if (ids.length > 1) unresolved.push(`agent ${proc.id} "${proc.name}" matches ${ids.join(', ')}`);
             continue;
@@ -518,15 +520,6 @@ function spawn(ctx, opts) {
     if (opts._.length !== 1) fail('spawn takes exactly one GHSA id or link');
     const id = ghsaId(opts._[0]);
 
-    const label = (opts.label ?? '').trim();
-    if (!label) fail('spawn needs --label "<2-5 word topic>"');
-    if (label.split(/\s+/).length > 5 || label.length > 32 || /GHSA/i.test(label)) {
-        fail(`label "${label}" should be a plain 2-5 word topic under 32 chars, no GHSA id`);
-    }
-    if (/\b(advisory|discussion|discuss|analysis|agent|review)\b/i.test(label)) {
-        fail(`label "${label}" describes the agent's role — use a 2-5 word gist of the vulnerability, from the GHSA summary`);
-    }
-
     const advisories = listAdvisories(ctx);
     const adv = advisories.byId.get(id);
     if (!adv) fail(`${id} not found in ${ctx.repo}'s security advisories`);
@@ -542,13 +535,13 @@ function spawn(ctx, opts) {
     if (!tool) fail(`no enabled Solo agent tool named "${AGENT_TOOL}"`);
 
     const concern = opts.concern ? oneLine(opts.concern) : '';
-    const vars = { ghsa: id, repo: ctx.repo, pwd: ctx.pwd, projectId: ctx.projectId, tag: id.toLowerCase() };
+    const vars = { ghsa: id, repo: ctx.repo, pwd: ctx.pwd, projectId: ctx.projectId, tag: id.toLowerCase(), agentPrefix: agentPrefix(id) };
     const task = pad
         ? template('discuss-task', { ...vars, padName: pad.name, concern: concern ? `\nThe user wants to talk about: ${concern}\n` : '' })
         : template('advisory-task', { ...vars, padName: padName(adv), concern: concern ? `\nThe user raised this when asking for the analysis: ${concern}\n` : '' });
 
     const proc = solo(['processes', 'spawn', '--project-id', String(ctx.projectId), '--kind', 'agent',
-        '--agent-tool-id', String(tool.id), '--name', `${agentPrefix(id)} - ${label}`, '--arg', task]).process;
+        '--agent-tool-id', String(tool.id), '--name', `${agentPrefix(id)} - pending`, '--arg', task]).process;
 
     const what = pad ? `discussion agent, pad ${padUrl(ctx, pad)}` : 'analysis — arm the backstop';
     console.log(`spawned ${id} → agent ${proc.id} "${proc.name}" on ${AGENT_TOOL}; ${what}`);

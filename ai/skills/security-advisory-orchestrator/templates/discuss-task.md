@@ -6,7 +6,8 @@ Get ready to talk about it:
 
 1. Read that scratchpad in full.
 2. Read the report: `gh api repos/{{repo}}/security-advisories/{{ghsa}}`.
-3. Say in one line that you're ready, then wait for the user.
+3. Rename yourself: `whoami()` for your process id, then `rename_process(process_id=<yours>, new_name="{{agentPrefix}} - <gist>")`, where the gist is a plain 2–5-word lowercase summary of the vulnerability from what you just read (`rce in antlers`, `entry auth bypass`). Keep `{{agentPrefix}} - ` exactly as written — the orchestrator finds you by it.
+4. Say in one line that you're ready, then wait for the user.
 
 Do NOT re-run the `security-advisory-draft` skill or edit the scratchpad unless the user asks you to.
 

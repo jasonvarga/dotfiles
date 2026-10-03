@@ -11,7 +11,7 @@ description: >-
 
 # Security Advisory Orchestrator
 
-You manage a fleet of Solo advisory agents — one per open GitHub security advisory — and the master status pad. You do **not** analyse advisories yourself. Everything deterministic lives in one script; you run it, relay its few lines of state, write agent labels, arm timers, and talk to the user.
+You manage a fleet of Solo advisory agents — one per open GitHub security advisory — and the master status pad. You do **not** analyse advisories yourself. Everything deterministic lives in one script; you run it, relay its few lines of state, arm timers, and talk to the user.
 
 `adv-orch` below always means the literal path `~/.claude/skills/security-advisory-orchestrator/scripts/adv-orch`. It needs the network (Solo's local API and GitHub), so:
 
@@ -45,16 +45,14 @@ Advisories come from GitHub only. A row exists for an advisory when an advisory 
 
 The icon comes from the pad's `Verdict:` line: `📝` a valid vulnerability with a draft ready, `❌` declined (invalid, duplicate, already mitigated, by design, won't fix). `⏳` means the agent hasn't written its pad yet. A ❌ is a real verdict, not a cleanup marker — the row stays until the user closes the GHSA on GitHub.
 
-Agents are found by name. **Every advisory agent is named `<short-id> - <label>`**, where the short id is the GHSA's first block (`GHSA-9hv3-4vhx-q9rc` → `9hv3`). `spawn` names them; an agent named any other way is invisible to the script.
-
-You supply the label on every `spawn`, analysis or discussion alike: a plain 2–5-word lowercase gist of the vulnerability, derived from the GHSA summary (`rce in antlers`, `entry auth bypass`) — never the raw summary, and never the agent's role (`advisory discussion`, `analysis`). The script rejects role words.
+Agents are found by name. **Every advisory agent is named `GHSA-<short-id> - <label>`**, where the short id is the GHSA's first block (`GHSA-9hv3-4vhx-q9rc` → `GHSA-9hv3`). `spawn` names them `… - pending`; the agent renames itself with a label once it has read the report. An agent named any other way is invisible to the script.
 
 ## What to run when
 
 - **Agent ping** — `Draft landed: GHSA-…` or `Verdict change: GHSA-…` → `adv-orch board`. Report the changed rows only; the script prints each new verdict phrase alongside its icon.
 - **Agent relays a state change** — `GHSA-… update: published`, `closed`, `withdrawn` → `adv-orch reconcile --apply`. If the user hasn't actually changed the GHSA on GitHub yet, the script leaves the row; say so.
-- **Add an advisory** (only when the user gives a GHSA id or link) → `adv-orch spawn <GHSA> --label "<label>"`. Add `--concern "…"` only for context the user stated. Agents always run on Opus. Then arm a backstop on yourself: `timer_fire_when_idle_all(processes=[<ids>], max_wait_ms=1800000, delivery_process_id=<you>, body="Backstop: <GHSA ids>")`. When it fires, `board`; a row still ⏳ → `references/troubleshooting.md`.
-- **Discuss an advisory** whose agent is gone ("open an agent for GHSA-…") → the same `adv-orch spawn <GHSA> --label "<label>"`. With an existing pad, the script spawns a discussion agent that reads the pad and waits — no backstop needed. If the advisory already has a running agent, the script refuses; point the user at that agent, or `send_input` the user's message to it and relay the reply.
+- **Add an advisory** (only when the user gives a GHSA id or link) → `adv-orch spawn <GHSA>`. Add `--concern "…"` only for context the user stated. Agents always run on Opus. Then arm a backstop on yourself: `timer_fire_when_idle_all(processes=[<ids>], max_wait_ms=1800000, delivery_process_id=<you>, body="Backstop: <GHSA ids>")`. When it fires, `board`; a row still ⏳ → `references/troubleshooting.md`.
+- **Discuss an advisory** whose agent is gone ("open an agent for GHSA-…") → the same `adv-orch spawn <GHSA>`. With an existing pad, the script spawns a discussion agent that reads the pad and waits — no backstop needed. If the advisory already has a running agent, the script refuses; point the user at that agent, or `send_input` the user's message to it and relay the reply.
 - **Reconcile / "clean up" / "status report"** → `adv-orch reconcile --apply`. It archives pads and closes agents of published, closed or withdrawn GHSAs, and flags two Running agents on one advisory (ask which to keep; never close either unasked).
 
 A non-zero exit or an `ERROR` line means the script refused to guess — see `references/troubleshooting.md`. Never hand-edit the table to work around it.
