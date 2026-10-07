@@ -21,7 +21,7 @@ const USAGE = `Usage: pr-orch <command> [options]
   reconcile [--apply]                    Archive pads / close agents of merged or closed PRs, then board
   sweep-plan [pr...] [--exclude n,n]     List board PRs with new commits or new discussion
   nudge <pr...>                          Print the re-review text for each PR's running agent, mark it pending
-  spawn <pr> --label "<2-5 words>" [--model opus|sonnet] [--concern "..."] [--refresh]
+  spawn <pr> --label "<2-5 words>" [--model opus|sonnet] [--concern "..."]
   spawn <pr> --discuss --label "..."     Discussion-only agent on an existing review (full review if none)
   clear-pending <pr...>                  Forget a pending re-review request
 
@@ -96,7 +96,7 @@ function gh(args) {
 // Context
 
 function parseArgs(argv) {
-    const booleans = new Set(['apply', 'dry-run', 'mark-refreshed', 'refresh', 'discuss', 'help']);
+    const booleans = new Set(['apply', 'dry-run', 'mark-refreshed', 'discuss', 'help']);
     const opts = { _: [] };
 
     for (let i = 0; i < argv.length; i++) {
@@ -649,7 +649,7 @@ function sweepPlan(ctx, opts) {
 
         lists[moved.kind].push(n);
         const agent = running(agents.get(n))[0];
-        actions.push(agent ? `#${n} nudge (agent ${agent.id})` : `#${n} spawn --refresh (no running agent): ${stripTag(pr.title)}`);
+        actions.push(agent ? `#${n} nudge (agent ${agent.id})` : `#${n} spawn (no running agent): ${stripTag(pr.title)}`);
     }
 
     const fmt = (list) => (list.length ? list.map((n) => `#${n}`).join(' ') : '—');
@@ -694,7 +694,7 @@ function nudge(ctx, opts) {
 
         const live = running(agents.get(n));
         if (live.length !== 1) {
-            out.push(`#${n}: ${live.length ? `${live.length} running agents, resolve first` : 'no running agent — spawn --refresh instead'}`);
+            out.push(`#${n}: ${live.length ? `${live.length} running agents, resolve first` : 'no running agent — spawn instead'}`);
             continue;
         }
 

@@ -23,7 +23,7 @@ Work in **batches of five**: a big fan-out competes for the same machine, and a 
 For each PR in the batch:
 
 - **`nudge (agent <id>)`** → collect them into one `pr-orch nudge <n> <n> …`, then `send_input` each printed text, unmodified, to the agent it names. Don't summarise, quote or characterise the new commits or comments — the agent reads them itself.
-- **`spawn --refresh`** → `pr-orch spawn <n> --refresh --label "<label>"`, labelling it from the title on the action line. Note the process id — it's a sweep agent.
+- **`spawn`** → `pr-orch spawn <n> --label "<label>"`, labelling it from the title on the action line. Note the process id — it's a sweep agent.
 
 Both mark the row ⏳ until the pad catches up. Arm `timer_fire_when_idle_all` over the batch's agents with `max_wait_ms=900000`. Pings (`Review landed`) and the timer both mean `pr-orch board`; start the next batch once the current one has landed or the timer fires.
 
