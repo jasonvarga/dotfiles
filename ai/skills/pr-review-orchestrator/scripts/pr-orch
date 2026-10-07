@@ -788,7 +788,9 @@ function spawn(ctx, opts) {
         task = template('review-task', {
             ...vars,
             modelClause: choice.decided ? ` Use ${choice.model} for this review — the model fit is already decided, so skip the model router.` : '',
-            refresh: opts.refresh || pad ? `\n${template('refresh-line', vars)}\n` : '',
+            scratchpad: pad
+                ? template('pad-existing', { ...vars, padName: pad.name, padId: pad.id })
+                : template('pad-new', vars),
             concern: concern ? `\nThe user raised this concern when asking for the review: ${concern}\n` : '',
         });
     }

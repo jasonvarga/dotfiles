@@ -1,0 +1,1 @@
+Write your findings to your own Solo scratchpad titled exactly `PR #{{number}} Review - {{title}}` in project {{projectId}}: scratchpad_write(project_id={{projectId}}, name="PR #{{number}} Review - {{title}}", content=<your findings, formatted per the `review` skill's scratchpad format>, tags=["pr", "review", "pr-{{number}}"])
