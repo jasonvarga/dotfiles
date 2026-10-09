@@ -1,5 +1,6 @@
 Never perform git commits without asking.
-Commit messages and PR descriptions should NOT have hard line breaks.
+Always make commits through the `commit` skill, including after I approve. Never run `git commit` directly.
+Always create PRs through the `create-pull-request` skill, including after I approve. Never run `gh pr create` directly.
 
 Delete files or directories using `rm` without any options. It is aliased to `trash`.
 

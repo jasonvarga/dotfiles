@@ -2,7 +2,8 @@
 name: commit
 description: >-
   Commit pending changes using atomic commits. Use when the user asks to
-  "commit", "commit my changes", or "make a commit". Groups related changes
+  "commit", "commit my changes", or "make a commit", or approves a commit you
+  proposed ("yes", "go ahead"). Groups related changes
   into separate logical commits. Never pushes. Stops on merge conflicts and
   asks before committing a mix of staged/unstaged changes.
 ---
@@ -39,6 +40,7 @@ Commit the working tree's pending changes as a series of atomic commits — each
    git log --oneline -20
    ```
    - Follow the prevailing convention (e.g. conventional-commits prefixes, capitalization, tense). If none is apparent, write concise imperative subjects.
+   - Message bodies must NOT have hard line breaks. Write each paragraph as a single line.
 
 5. **Stage and commit each group**:
    ```bash

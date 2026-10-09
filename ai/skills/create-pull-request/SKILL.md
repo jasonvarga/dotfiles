@@ -3,7 +3,7 @@ name: create-pull-request
 description: >-
   Create a GitHub pull request for the current branch using `gh`. Use when the
   user asks to open/create a PR, "make a pull request", or "gh pr create" for
-  the current branch. Warns about uncommitted changes and matches the title
+  the current branch, or approves a PR you proposed ("yes", "go ahead"). Warns about uncommitted changes and matches the title
   convention of the repo's other PRs.
 ---
 
