@@ -45,10 +45,15 @@ Create a pull request in the current repo from the current branch using `gh`.
 
 5. **Confirm with the user** before creating: show the target base branch, title, and body. Wait for approval.
 
-6. **Create the PR**:
+6. **Push the branch** explicitly:
+   ```bash
+   git push -u origin HEAD
+   ```
+   `gh pr create` only pushes via an interactive prompt, which fails when run by an agent, so always push first.
+
+7. **Create the PR**:
    ```bash
    gh pr create --base <base> --title "<title>" --body "<body>"
    ```
-   `gh pr create` pushes the current branch automatically if it has no upstream — no separate `git push` needed.
 
-7. Report the resulting PR URL.
+8. Report the resulting PR URL.
