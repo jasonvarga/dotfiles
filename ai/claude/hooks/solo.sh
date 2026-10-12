@@ -13,6 +13,13 @@ Solo agent, not a Task subagent. Resolve the runtime with `mcp__solo__list_agent
 `extra_args`, e.g. ["--model", "sonnet"]), spawn it with `mcp__solo__spawn_agent`, then
 send the work with `mcp__solo__send_input`.
 
+Waiting on agents: after sending work, arm `mcp__solo__timer_fire_when_idle_all` (or
+`_any` to react to the first one done) on the agent process ids, then end your turn. The
+timer fires as soon as the agents go idle, so you never wait past completion. Never use
+`timer_set` or a sleep sized to a guess of how long the agent will take. `max_wait_ms` is
+only a generous backstop. If the result is `already_satisfied`, inspect the agent's output
+and re-arm if it hasn't actually started or finished.
+
 Scratchpads: "write that to a scratchpad", "put it in a scratchpad", "check the scratchpad"
 means a Solo scratchpad — `mcp__solo__scratchpad_write` / `_append` / `_read` / `_list` /
 `_find`. Never substitute a markdown file on disk.
